@@ -1,0 +1,1 @@
+Collection of lecture notes for _Data Wrangling in R_, a 1-credit class to be taught at the University of Virginia in Spring 2015. 
