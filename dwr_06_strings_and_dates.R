@@ -28,8 +28,10 @@ str(popVa)
 # strings. Specifically I want to work with the GEO.display.label and GEO.id 
 # columns. Some things we might want to do include removing the comma, the word 
 # "Virginia" and the words "town" or "city. We might also like to create an 
-# indicator for whether a row refers to a city or town. Finally I may want to
-# extract the last 7 digits from Geo.id since those are the unique ID values.
+# indicator for whether a row refers to a city or town. Finally I may want to 
+# extract the last 7 digits from Geo.id since those are the unique ID values. 
+# (Of course the GEO.id2 already has the last 7 digits from Geo.id, so we don't
+# need to do it, but I'm going to show you how anyway.)
 
 # Let's introduce some basic functions for investigating and manipulating
 # character strings.
@@ -46,7 +48,7 @@ nchar(popVa$GEO.display.label[1])
 # nchar is vectorized so it will work on entire vectors:
 nchar(popVa$GEO.display.label)
 
-# NOTE: nchar does not work on factors.
+# NOTE: nchar() does not work on factors.
 
 # How does nchar() handle NAs? It returns 2:
 (x <- c("UVa","UVa",NA, "GT", "GT"))
@@ -147,7 +149,9 @@ gsub("no","yes", text) # all instances
 # Let's go back to the popVa data and remove "city" and "town" from city column:
 popVa$city[1:5] # look at first 5
 
-# first remove " city"; find " city" and replace with nothing
+# first remove " city"; find " city" and replace with nothing. gsub() or sub() 
+# will work here. I tend to use gsub() by default unless I know I only want to
+# replace the first instance of something.
 popVa$city <- gsub(" city","",popVa$city)
 # then remove " town":
 popVa$city <- gsub(" town","",popVa$city)
@@ -167,6 +171,54 @@ temp[1:5]
 # the string. We will delve into regular expressions in a future lecture. This 
 # is a very simple example. Regular Expressions can get quite complicated and
 # indeed there are entire books devoted to regular expressions.
+
+
+# grep and grepl - Pattern Matching and Replacement
+
+# grep and grepl search for text or strings. grep() returns indices of matches
+# while grepl() returns a logical vector.
+grep("Fog-Rain",weather$Events)
+# Note: the argument invert=T will return the opposite: indices that do not
+# match the string.
+
+# The value=T will extract the vector elements containing the match
+grep("Fog-Rain",weather$Events, value=T) 
+
+# grepl() returns a logical vector
+grepl("Fog-Rain",weather$Events)
+
+# Let's create city/town indicator in popVa data frame:
+popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label)==1,1,0)
+
+# grep, grepl, sub and gsub become extremely powerful with regular expressions,
+# which we'll explore in a later lecture.
+
+# The stringr package
+
+# From the package description: "stringr is a set of simple wrappers that make 
+# R's string functions more consistent, simpler and easier to use." That about 
+# says it all. This is an invaluable package for working with string data.
+
+# install.packages("stringr")
+library(stringr)
+
+# We will look deeper into stringr when we cover regular expressions, for now
+# here are two handy functions tide you over:
+
+# str_trim() - Trim whitespace from start and end of string.
+x <- c(" VA ", " MD ", " DE ")
+x
+str_trim(x)
+
+# str_sub() - Extract substrings from a character vector.
+
+# This differs from substr() by allowing you use negative numbers to count
+# backward and to specify only the end position
+
+loc <- "Charlottesville, VA, 22901"
+str_sub(loc, end = 15)
+str_sub(loc, start = -5) # extract the last 5 characters
+str_sub(loc, end = -5) # extract the 5th from last character and everything before it
 
 
 
@@ -223,11 +275,11 @@ plot(Max.TemperatureF ~ Date, data=weather, type="l")
 today <- Sys.Date()
 today
 class(today)
-format(today, "%B %d %Y")
+format(today, "%B %d, %Y")
 format(today, "%a %b %d")
 format(today, "%Y-%b-%d")
 format(today, "%m/%d/%y")
-format(today, "%A, %B %d, %Y")
+format(today, "%A, %B%e, %Y")
 
 # In each case above the date is displayed in a new format and converted to
 # character.
@@ -242,7 +294,7 @@ Month
 Day <- sample(1:31, 20, replace=T)
 Day
 rdates <- data.frame(Year, Month, Day)
-rdates
+head(rdates)
 
 # The ISOdate() function allows us to combine those fields into a single date.
 # The basic syntax is ISOdate(year, month, day):
@@ -292,6 +344,7 @@ x <- as.POSIXct(Sys.time())
 x
 class(x)
 y <- as.POSIXlt(Sys.time())
+y
 class(y)
 # Use unclass to see the internal "list" structure:
 unclass(y)
@@ -326,4 +379,45 @@ f <- which.max(diff(rainyDays$Date))
 rainyDays[f,]
 rainyDays[f+1,]
  
+# Generating time sequences
 
+# we can use the seq() functiont to generate a sequence of dates. 
+
+# sequence of dates with interval of one day:
+seq(as.Date("2015-01-01"), by="days", length=14)
+
+# sequence of dates with interval of two weeks from Jan 1 to Dec 31:
+seq(as.Date("2015-01-01"), to=as.Date("2015-12-31"), by="2 weeks")
+
+
+# The lubridate package
+
+# From the package description: "Lubridate has a consistent, memorable syntax, 
+# that makes working with dates fun instead of frustrating." Fun? I'll let you 
+# be the judge of that. But I will say this package does make working with dates
+# much easier.
+
+# install.packages("lubridate")
+library(lubridate)
+
+# Remember the EST column in the weather data and how we had to use strptime
+# symbols to specify the format? You don't have to do that with lubridate!
+weather$EST[1:3]
+
+# We have month, day, year. So to convert that to a date with lubridate we use
+# the mdy() function:
+mdy(weather$EST[1:3])
+
+# lubridate has many such functions. Just choose the function whose name models
+# the order in which the year ('y'), month ('m') and day ('d') elements appear:
+# dmy, myd, ymd, ydm, dym, mdy, ymd_hms
+
+# If that was all lubridate did it would still be a fantastic package. But it
+# does much more! lubridate has a very friendly vignette you should read. You
+# can also read the original journal article: "Dates and Times Made Easy with
+# lubridate" by Garrett Grolemund, Hadley Wickham.
+# http://www.jstatsoft.org/v40/i03/
+
+# save data for next set of lecture notes
+save(list=c("electionData", "weather", "arrests", "allStocks", "popVa"), 
+     file="../data/datasets_L06.Rda")

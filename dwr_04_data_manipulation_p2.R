@@ -126,6 +126,40 @@ sapply(temps,mean)
 # you write your own functions.
 
 
+# Updating Data -----------------------------------------------------------
+
+# Sometimes we need to update data, such as replacing a missing value code of 
+# "99" with NA. In fact this needs to be done with our arrests data. In this
+# data set, 99 means missing. Since most of the numbers in this data are codes,
+# this is a reasonable code to have. But there are two variables that represent
+# actual numbers: Age and Children. We don't want 99 counted as a number in
+# those columns. Here's why:
+par(mfrow=c(1,2))
+hist(arrests$Age)
+hist(arrests$Children)
+par(mfrow=c(1,1))
+# A non-trivial number of people (about 500) have an age of 99 according to R. 
+# And most people have 99 children! So if I summarize age and children, I get
+# skewed numbers:
+summary(arrests$Age)
+summary(arrests$Children)
+
+# Here's how we can replace 99 with NA:
+arrests$Age[arrests$Age==99] <- NA
+arrests$Children[arrests$Children==99] <- NA
+
+# arrests$Age==99 produces a logical TRUE/FALSE vector the same length (ie, same
+# number of indices as the arrests$Age vector). The values in the indexed
+# positioms that correspond with TRUE are replaced with NA.
+
+# Now our numerical data looks better and makes sense
+par(mfrow=c(1,2))
+hist(arrests$Age)
+hist(arrests$Children)
+par(mfrow=c(1,1))
+summary(arrests$Age)
+summary(arrests$Children)
+
 
 # Factors -----------------------------------------------------------------
 
