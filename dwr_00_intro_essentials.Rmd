@@ -1,0 +1,148 @@
+---
+title: "R and RStudio Essentials"
+author: "Clay Ford"
+date: "Sprint 2015"
+output: beamer_presentation
+---
+
+## Intro
+
+This lecture covers what I consider to be essential skills to be an efficient and productive user of R and RStudio. I don't claim this is comprehensive or official. 
+
+I simply provide this in the hopes it will help you work smarter, not harder.
+
+All keyboard shortcuts refer to RStudio.
+
+## Creating an R Script
+
+You can use R interactively, entering one line at a time in the console. But you'll eventually want to save that code and be able to run it again, or at least review it.
+
+An R script is just a text file with a .R extension.
+
+`Ctrl + Shift + N` will start a new script on a PC.
+`Command + Shift + N` will start a new script on a Mac.
+
+Be sure you know how to start and save an R script. I will ask you to turn in R scripts for assignments.
+
+## Submitting code from a script
+
+To submit code from a script to the console, place your cursor in the line of code you want to submit and hit `Ctrl + Enter`, or `Command + Enter` on a Mac.
+
+You can also highlight multiple lines of code and use the same keyboard shortcut to submit the code. Tip: `Shift + down arrow` will highlight lines
+
+To switch from script to console, type `Ctrl + 2`
+
+To switch from console to script, type `Ctrl + 1`
+
+## Comment your code
+
+To add a comment to R code, enter a # followed by your comment. For example:
+
+```{r}
+# create vector of proportions
+pr <- c(0.2,0.3,0.4,0.1)
+```
+
+RStudio displays comments in green font. 
+
+To quickly comment/uncomment a block of text or code, highlight it and hit `Ctrl+Shift+C`, or `Command+Shift+C` on a Mac.
+
+To re-flow comments (ie, automatically add line breaks), hit `Ctrl+Shift+/`, or `Command+Shift+/` on a Mac
+
+
+## Your working directory
+
+It's imperative you understand the concept of a working directory. 
+
+Your working directory is where R looks for input files, and where it sends output files (unless you specify a path in your code). For example, the code:
+
+`dat <- read.csv("file.csv")`
+
+looks in your working directory for `file.csv`. For the code to work, you need to set your working directory to be the directory where that file is located.
+
+## Setting your working directory - R code
+
+The function to set your working directory is `setwd`. For example:
+
+`setwd("~/_clients/Allen/")`
+
+sets my working directory to the `Allen` folder, in the `_clients` folder, in _my computer's_ home directory.
+
+The `~` means my computer's home directory. On Windows, this is usually `My Documents`.
+
+## Setting your working directory - Completion
+
+RStudio allows you to use Tab completion when working with directories and typing R code. Take advantage of this!
+
+When setting your working directory:
+
+- Type `setwd()` (notice RStudio automatically adds the closing parens)
+- Type `""` in the parens (notice RStudio automatically adds the closing double-quote)
+- Type `~` in the double quotes and hit Tab; you should see a selection of available directories in your computer's home directory.
+- arrow up and down to find the desired directory and hit Tab.
+
+## Setting your working directory - RStudio
+
+You can set your working directory via point-and-click in RStudio by hitting `Ctrl + Shift + H`.
+
+This is fine for an exploratory session or following along in class. But when you write a script, you'll want to be able to have a line of code that sets your working directory for you.
+
+In this class I will provide you data sets for lectures and assignments. 
+
+To follow along with lectures, you **must** know how to download the files and set your working directory to where you downloaded the files. 
+
+My suggestion is to create a folder for this course and then create a subfolder called `data`.
+
+## RStudio function completion
+
+As I mentioned earlier, RStudio can auto-complete your typing.
+
+Start typing a command and hit `Tab`. All functions in currently loaded packages that begin with the letters you typed will appear in a pick-list.
+
+After you typed your command and opened a parens, hit `Tab` again. In most cases (not all) you will get a pick-list of arguments for that function.
+
+Finally, typing `Alt + -` will insert the assignment operator: `<-`
+
+## Using Help
+
+All R users occasionally need help. Every last one. Know how to use R Help. 
+
+`help(function)`  
+`?function`
+
+A help page for a function has the name of the function at the top left next to the package it's in. For example:
+
+`ymd {lubridate}`
+
+The function `ymd` is part of the _lubridate_ package. 
+
+## Vignettes
+
+Some packages come with _vignettes_, which are basically tutorials to help you get up and running with a package. 
+
+These will be available on the package's index (or home) page through the link _User guides, package vignettes and other documentation._
+
+If no vignette is available, check the package _DESCRIPTION file._ It will sometimes have a URL that serves as the home page for the package.
+
+## Other keyboard shortcuts
+
+Insert section header: `Ctrl + Shift + R`
+
+Run the current section: `Ctrl + Alt + T`
+
+Clear the console: `Ctrl + L`
+
+Quickly create an R Notebook of your code: `Ctrl + Shift + K`
+
+More RStudio Keyboard Shortcuts:  
+`Alt + Shift + K`
+
+## Books of Note
+
+R in Action
+
+Data Manipulation using R
+
+R for Everyone
+
+R Cookbook 
