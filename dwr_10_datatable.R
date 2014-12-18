@@ -39,13 +39,9 @@ class(allStocksDT)
 is.data.frame(allStocksDT)
 is.data.table(allStocksDT)
 
-# Like dplyr's tbl_df() function, data.table has the effect of supressing the
-# printing of entire data frames to the console.
-allStocksDT
-
-# It prints the first 5 and last 5 records and places a colon after the row
-# number.
-
+# Since it's also a data frame, it works with packages and functions that work
+# with data frames. For example, aggregate() is a function for data frames:
+aggregate(Volume ~ Stock, data=allStocksDT, mean)
 
 # And since it's a data frame we can use the same base R functions. For example:
 names(allStocksDT)
@@ -53,6 +49,13 @@ ncol(allStocksDT)
 dim(allStocksDT)
 str(allStocksDT)
 levels(allStocksDT$Stock)
+
+# Like dplyr's tbl_df() function, data.table has the effect of supressing the
+# printing of entire data frames to the console.
+allStocksDT
+
+# It prints the first 5 and last 5 records and places a colon after the row
+# number.
 
 # How about indexing? Does that work the same? Not quite.
 # We can still extract, say, row 2:
@@ -67,32 +70,129 @@ allStocksDT[2,3]
 
 # The general form is thus DT[i, j, by] where DT is a data table, like 
 # allStocksDT. In words, this translates to "Take DT, subset rows using i, then 
-# calculate j grouped by by". If you're familiar with SQL, i is WHERE, j is
-# SELECT and by GROUP BY.
+# calculate j grouped by by". If you're familiar with SQL it may be useful to
+# think of i as WHERE, j as SELECT and by as GROUP BY.
 
-# Some examples:
+# How to select rows:
+allStocksDT[1:5,]
+# Actually don't need the comma to just select rows (unlike data frames)
+allStocksDT[1:5]
 
-# Select row 2 and column 3
-allStocksDT[2, High]
+# How to select columns:
+allStocksDT[1:5,.(Open, High) ]
+# Here we would still need the comma if we wanted to just select columns. (I
+# included 1:5 in the i argument to limit console output.)
 
-# can we make allStocksDT[2, 3] work? Yes, setting the with argument to FALSE:
+# What is the .() that wraps the column names? It's an alias to list().
+allStocksDT[1:5,list(Open, High)] # same as previous
+
+# What if we don't use .() or list()? You get a vector:
+allStocksDT[1:5,c(Open, High)]
+
+# When you use .() in j, the result is always a data.table.
+
+# Going back to this: allStocksDT[2,3]. Can we make that work the way it works
+# for a data frame? Yes, by setting the with argument to FALSE:
 allStocksDT[2, 3, with=FALSE]
 
-# Select column 3 and return as a vector
-allStocksDT[, High]
+# But data.table brackets don't stop with selection. You can also compute on
+# columns. For example, find the mean and std deviation of the Open price:
+allStocksDT[,.(meanOpen = mean(Open), sdOpen = sd(Open))]
 
-# Select column 3 and return as a data.table. Wrap in .(). When you use .() in
-# j, the result is always a data.table.
-allStocksDT[, .(High)]
+# You can also combine column selection with computation:
+allStocksDT[,.(Open, meanOpen = mean(Open))]
+# Notice the mean was "recycled" to fill the data table
 
-# where rows have a date in January, select Date and Volume 
-allStocksDT[months(Date)=="January", .(Date, Volume)]
+# You can pretty much throw anything into j. The following graphs bbby volume
+# over time:
+allStocksDT[Stock == "bbby",plot(Date, Volume, type="l", main="bbby Volume")]
 
-# where rows have a date in January, calculate mean Volume by Stock 
-allStocksDT[months(Date)=="January", .(meanVolume = mean(Volume)), by = Stock]
+# Finally we can use the by argument to do calculations by group. Here we
+# calculate mean and SD of Open by levels of Stock:
+allStocksDT[,.(meanOpen = mean(Open), sdOpen = sd(Open)), by = .(Stock)]
 
-# See what we just did? We defined a new variable in j called meanVolume that is
-# the mean volume of each stock for January.
+# Notice the .() notation in the by argument. If you have one item in by, you
+# can drop the .(). Probably not a bad idea to just keep it.
+
+# We can also define groups in the by argument. For example, calculate the mean
+# volume per month per stock:
+allStocksDT[, .(meanVolume = mean(Volume)), by = .(Month = months(Date), Stock)]
+
+# We defined a new grouping variable called Month and then used it as one of the
+# by variable for which to calculate the means.
+
+# We can use i to limit the calculation to a subset. Here we calculate the mean
+# Volume for per month for bbby:
+allStocksDT[Stock == "bbby", .(meanVolume = mean(Volume)), 
+            by = .(Month = months(Date))]
+
+# Recall how we chained operations together in dplyr using %>%. We can also
+# chain operations in data.table.
+
+# Calculate mean open price per stock then sort by mean in ascending order:
+allStocksDT[,.(meanOpen = mean(Open)), by = .(Stock)][order(meanOpen)]
+
+# Notice the "][". They need to be next to one another for chaining to work.
+
+# Find the minimum and maximum stock price for each stock. 
+
+# Recall the chaining we used in dplyr:
+# allStocks %>% 
+#   group_by(Stock) %>%
+#   summarise(Min=min(Low), Max=max(High))
+
+# We actually don't need to chain anything to do that in data.table:
+allStocksDT[, .(Min=min(Low), Max=max(High)), .(Stock)]
+
+
+# Find the largest change in Open and Close price for each stock. 
+
+# Recall the chaining we used in dplyr:
+# allStocks %>%
+#   group_by(Stock) %>%
+#   mutate(Change = Close - Open) %>%
+#   summarise(LargestGain = max(Change), LargestLoss = min(Change))
+
+allStocksDT[,.(Change = Close - Open), 
+            .(Stock)][,.(LargestGain = max(Change),
+                         LargestLoss = min(Change)),
+                      .(Stock)]
+
+# It works, but it's a little too concise for my taste.
+
+# Back to computations on columns. What if you have a lot of columns? This can
+# get tedious:
+allStocksDT[,.(mean(Open), mean(High), mean(Low), mean(Close), mean(Volume)), by = .(Stock)]
+
+# data.table provides the .SD symbol to help with this. SD = Subset Data. Of
+# course it's only helpful if you're comfortable using the lapply function.
+allStocksDT[,lapply(.SD, mean), by = .(Stock)]
+
+# That calculated the mean for all columns (including the date!) except what was
+# in the by argument. We can use the .SDcols argument to specify columns:
+allStocksDT[,lapply(.SD, mean), by = .(Stock), .SDcols = -c("Date","Volume")]
+
+# So far everything we've done has been output to the console and not saved. We 
+# could have saved our work the usual way with an assigment operator "<-". 
+# However, data.table provides a convenient way to modify a data table without 
+# using an assignment operator. The function is ":=" (read "colon equals"). It 
+# updates or adds column(s) by reference. That is, it makes no copies of any
+# part of memory at all. This can be very efficient for large data sets.
+
+# Let's do some examples. 
+
+# Create a column for day of trading:
+names(allStocksDT)
+allStocksDT[, Day := weekdays(Date)]
+names(allStocksDT)
+
+# We can also remove columns:
+allStocksDT[, Day := NULL]
+names(allStocksDT)
+
+# Can also add/update multiple columns:
+
+
 
 # This is a good time to demonstrate data.table's speed. Let's generate a data
 # frame with 1,000,000 rows.
@@ -115,6 +215,7 @@ system.time(
 ans2
 
 # Considerably faster!
+
 
 # maybe compare to dplyr with baseball example?
 
