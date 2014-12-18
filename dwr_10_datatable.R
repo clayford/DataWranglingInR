@@ -126,6 +126,8 @@ allStocksDT[, .(meanVolume = mean(Volume)), by = .(Month = months(Date), Stock)]
 allStocksDT[Stock == "bbby", .(meanVolume = mean(Volume)), 
             by = .(Month = months(Date))]
 
+# Chaining ----------------------------------------------------------------
+
 # Recall how we chained operations together in dplyr using %>%. We can also
 # chain operations in data.table.
 
@@ -169,8 +171,12 @@ allStocksDT[,.(mean(Open), mean(High), mean(Low), mean(Close), mean(Volume)), by
 allStocksDT[,lapply(.SD, mean), by = .(Stock)]
 
 # That calculated the mean for all columns (including the date!) except what was
-# in the by argument. We can use the .SDcols argument to specify columns:
+# in the by argument. We can use the .SDcols argument to specify all columns
+# except the Date and Volume columns:
 allStocksDT[,lapply(.SD, mean), by = .(Stock), .SDcols = -c("Date","Volume")]
+
+
+# := ----------------------------------------------------------------------
 
 # So far everything we've done has been output to the console and not saved. We 
 # could have saved our work the usual way with an assigment operator "<-". 
@@ -186,13 +192,54 @@ names(allStocksDT)
 allStocksDT[, Day := weekdays(Date)]
 names(allStocksDT)
 
-# We can also remove columns:
+# Remove the column we created:
 allStocksDT[, Day := NULL]
 names(allStocksDT)
 
-# Can also add/update multiple columns:
+# We can also add/update multiple columns. Here we create a new column for Day
+# and format the Volume column to have commas:
+# install.packages("scales")
+library(scales) # for comma function
+allStocksDT[, c("Day", "Volume") := list(weekdays(Date), comma(Volume))]
+allStocksDT
+
+# Let's change back to the way it was by removing the Day column and converting
+# Volume to integer:
+# install.packages("tidyr")
+library(tidyr) # for extract_numeric function
+allStocksDT[, c("Day", "Volume") := list(NULL, extract_numeric(Volume))]
+allStocksDT
+
+# And now let's do what we did before another way!
+allStocksDT[, `:=`(Day = weekdays(Date), Volume = comma(Volume))]
+allStocksDT
+
+# Here we're using := like a function, because it is a function! On a side note,
+# just about everything is accomplished by functions in R. Even the "+" sign is
+# a function:
+2+4
+`+`(2,4)
+
+# Those brackets in data frames? Yep, functions:
+`[`(allStocks,1:4,1:4)
+
+# Again let's tidy up:
+allStocksDT[, `:=`(Day = NULL, Volume = extract_numeric(Volume))]
+allStocksDT
+
+# we can combine := with i and j. Here we subset where month equals January,
+# then calculate the total Volume per Stock.
+allStocksDT[months(Date)=="January", Total := sum(Volume), by = .(Stock)]
+
+# If we print the data table, we'll see NA for Total. That's because the head
+# and tail of the data table do not display data from January.
+allStocksDT
+
+# To see the result, we need to show some data from January
+allStocksDT[months(Date)=="January"]
 
 
+# data.table Speed --------------------------------------------------------
 
 # This is a good time to demonstrate data.table's speed. Let's generate a data
 # frame with 1,000,000 rows.
@@ -201,7 +248,7 @@ DF <- data.frame(x=factor(sample(x = c("A","B","C"),size = 1e6, replace = T)),
 dim(DF)
 print(object.size(DF), units = "Mb")
 
-# Now lets find the mean of y for each level of x:
+# Now lets find the mean of y for each level of x using aggregate():
 system.time(
   ans1 <- aggregate(y ~ x, data=DF, mean)
   )
@@ -216,10 +263,42 @@ ans2
 
 # Considerably faster!
 
+# Remember the baseball example from the dplyr lecture? Here it is again with dplyr:
+library(Lahman)
 
-# maybe compare to dplyr with baseball example?
+# Batting %>%
+#   group_by(playerID) %>%
+#   summarize(total = sum(G_batting)) %>%
+#   arrange(desc(total)) %>%
+#   head(5)
 
-# example of chaining:
-DT[,.(mt10 = mean(head(y,n=10))), by = x][order(-mt10)]
+# Here's how we can do it with data.table and some chaining:
+BattingDT <- data.table(Batting)
+BattingDT[,.(total = sum(G_batting)), by = .(playerID)][head(order(total,decreasing = T),n=5)]
+rm(BattingDT)
 
-# topics to cover: setting key, chaining and joins
+
+# Keys --------------------------------------------------------------------
+
+
+# data.table allows us to create a "key" on a data table. The data.table 
+# documentation refers to keys as "super-charged row names". It may help to also
+# think of them as a factor. Let's see how to set a key and what we can do with
+# it.
+
+tables()
+# Notice the key column is empty
+
+setkey(allStocksDT, Stock)
+tables()
+
+# Now Stock is the key
+allStocksDT
+
+# The data table is now sorted automatically by Stock. Also notice we didn't
+# have to use an assignment operator "<-" above.
+
+# see just the bbby stocks
+allStocksDT["bbby"]
+
+# A key can consist of multiple columns.
