@@ -69,12 +69,13 @@ dim(eyCol)
 
 # accessing elements of a matrix with bracket notation
 e2
+e2[1,1] # element in row 1 column 1
 e2[1:2,1:2] # first two rows, first two columns
 e2[c(1,3),c(1,3)] # row 1 and 3, column 1 and 3
 e2[3,] # row 3
 e2[,2] # column 2; output as vector
 e2[,2, drop=F] # column 2; output as 1 column matrix
-
+e2[cbind(c(1,2,3),c(1,2,3))] # row 1 col 1, row 2 col 2, and row 3 col 3
 
 # Arrays ------------------------------------------------------------------
 

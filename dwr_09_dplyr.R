@@ -363,3 +363,7 @@ ggplot(choro, aes(long, lat, group=group, fill=MOV2)) +
 # Notice how ggplot and dplyr are similar in the way they allow you to chain 
 # together commands. This is because they were both designed by the same person,
 # Hadley Wickham. 
+
+# save data for next set of lecture notes
+save(list=c("electionData", "weather", "arrests", "allStocks", "popVa",
+            "senate_bills"), file="../data/datasets_L09.Rda")

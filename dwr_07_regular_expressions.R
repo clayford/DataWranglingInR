@@ -248,10 +248,15 @@ tmp[[1]]
 # Extract the first element and add to the allStocks data frame:
 tmp <- sapply(tmp, function(x)x[1])
 tmp[1:3]
-allStocks$Stock <- tmp
+allStocks$Stock <- factor(tmp)
 head(allStocks)
 tail(allStocks)
 
+# While we're at it, let's fix the Date:
+class(allStocks$Date)
+
+# Currently a factor. It should be a date.
+allStocks$Date <- as.Date(allStocks$Date, format="%d-%b-%y")
 
 # Now let's finish cleaning up the 2012 election data
 names(electionData)
