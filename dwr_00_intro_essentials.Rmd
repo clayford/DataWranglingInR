@@ -5,13 +5,108 @@ date: "Sprint 2015"
 output: beamer_presentation
 ---
 
-## Intro
+## Introducing R
 
-This lecture covers what I consider to be essential skills to be an efficient and productive user of R and RStudio. I don't claim this is comprehensive or official. 
+- R is a language and environment for statistical computing and graphics
+- Freely available and maintained by volunteers
+- R is extensible; can be expanded by installing "packages" or by creating your own "functions"
+- Frequently used with RStudio, a free IDE (integrated development environment) for R
 
-I simply provide this in the hopes it will help you work smarter, not harder.
 
-All keyboard shortcuts refer to RStudio.
+## How to get R and RStudio
+
+**R**: http://cran.r-project.org/ (or better yet, Google “Download R”)
+
+**RStudio**: http://www.rstudio.com/ 
+
+Both are available for Windows, Mac, and Linux and free to install (no catches).
+
+If you install R and RStudio, then you only need to run RStudio.
+
+
+## Using R
+
+- command-line driven (*very* little point-and-click)
+- use "functions" to work with data
+- can work interactively (one function at a time) or write a script to submit multiple functions at once
+- requires time and effort to learn, but RStudio makes the process easier
+
+
+## R basics - functions
+
+R uses *functions* to perform operations.
+
+Functions take *arguments* to specify how operations are performed.
+
+Example: `read.csv(file="scores.csv")`
+
+`read.csv` is a function to import a CSV file; `file` is an argument.
+
+R has **many** functions. Fortunately about 20% of them do about 80% of the work.
+
+## R basics - assignment
+
+We often need to save a function's result or output. For this we use the assignment operator: ` <- `
+
+For example, when you import a CSV file you need to give it a name:
+
+`scoreData <- read.csv(file="scores.csv")`
+
+Now we can use `scoreData` as an argument to other functions. For example: `summary(scoreData)` which computes summaries for each column in the data.
+
+**Note**: Use `Alt + -` in RStudio to quickly insert ` <- `. You can also use `=` for assignment.
+
+## R basics - objects
+
+R creates and manipulates *objects*. Examples of objects are vectors, data frames, matrices and lists.
+
+You can create as many objects as memory allows.
+
+```{r}
+# create vector of character strings
+gender <- c("Male","Female","Male") 
+
+# create vector of numbers
+x <- seq(0, 10, by=2) 
+
+# create data frame
+df <- read.csv("../data/datBig.csv") 
+```
+
+Note: Text prefaced with `#` are comments and ignored by R. 
+
+## R basics - packages
+
+All functions belong to *packages*. R comes with about 25 packages, but as of August 2014, there are *over 5800* user-contributed packages!
+
+To use functions in a package, the package must be installed and loaded. 
+
+You only install a package once. You load a package whenever you want to use its functions.
+
+Examples of packages that come with R:
+
+- The `stats` package contains statistical functions
+- The `foreign` package contains functions for reading data from other statistical programs
+- The `graphics` package contains functions for creating graphics
+
+
+## R in a Nutshell
+
+**Use functions in various packages to create and manipulate objects**.
+
+
+## Running R
+
+When you have R and RStudio installed, you only need to run RStudio.
+
+RStudio displays four panels:
+
+1. Script  
+2. Console  
+3. Environment (what's in memory)  
+4. Help/Plots  
+
+These can be rearranged. (Tools...Global Options...Pane Layout)
 
 ## Creating an R Script
 
@@ -139,10 +234,24 @@ More RStudio Keyboard Shortcuts:
 
 ## Books of Note
 
-R in Action
+- _R in Action_, Robert I. Kabacoff
 
-Data Manipulation using R
+- _Data Manipulation using R_, Phil Spector
 
-R for Everyone
+- _R for Everyone_, Jared Lander
 
-R Cookbook 
+- _R Cookbook_, Paul Teetor 
+
+## Web Sites to explore
+
+- Contributed Documentation: http://cran.r-project.org/other-docs.html
+
+- Quick-R: http://www.statmethods.net/
+
+- Cookbook for R: http://www.cookbook-r.com/
+
+- R-statistics blog: http://www.r-statistics.com/
+
+- The R Journal: http://journal.r-project.org/
+
+- UCLA R Starter Kit: http://www.ats.ucla.edu/stat/r/sk/

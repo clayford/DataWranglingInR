@@ -370,10 +370,17 @@ sum(weather$PrecipitationIn[weather$PrecipitationIn > 0.001])
 
 # Converting numeric to factor --------------------------------------------
 
-# We can use the cut() function to convert a numeric variable into a factor. The
-# basic syntax is cut(x, breaks) where x is numeric vector and breaks is either
-# a numeric vector of two or more unique cut points, or a single number (greater
-# than or equal to 2) giving the number of intervals into which x is to be cut.
+# It's easy to convert a numeric variable to a factor. Just use the factor() 
+# function. For example, say data frame DF has a variable YEAR that is numeric.
+# We can convert YEAR to a factor as follows:
+
+# DF$YEAR <- factor(DF$YEAR)
+
+# We can also use the cut() function to convert a numeric variable into a
+# factor. The basic syntax is cut(x, breaks) where x is numeric vector and
+# breaks is either a numeric vector of two or more unique cut points, or a
+# single number (greater than or equal to 2) giving the number of intervals into
+# which x is to be cut.
 
 # Let's make four equally spaced levels for Mean.Humidity:
 meanHumGr1 <- cut(weather$Mean.Humidity,4) 

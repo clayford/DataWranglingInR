@@ -8,7 +8,7 @@
 load("../data/datasets_L07.Rda")
 
 
-# The data.table package is very similar to dplyr in it's mission: provide fast 
+# The data.table package is very similar to dplyr in its mission: provide fast 
 # aggregation of data using short, flexible syntax. I suppose you could say 
 # data.table and dplyr compete with one another, though I think any competition 
 # between them is ultimately friendly. The developers of each always seem very
@@ -77,6 +77,12 @@ allStocksDT[2,3]
 allStocksDT[1:5,]
 # Actually don't need the comma to just select rows (unlike data frames)
 allStocksDT[1:5]
+# Can use conditional selection:
+allStocksDT[Close < 50]
+allStocksDT[Close < 50 & Stock=="tfm"]
+
+# Notice we didn't have to preface Close or Stock with allStocksDT$. Nice
+# benefit of data.table.
 
 # How to select columns:
 allStocksDT[1:5,.(Open, High) ]
@@ -302,3 +308,15 @@ allStocksDT
 allStocksDT["bbby"]
 
 # A key can consist of multiple columns.
+
+head(airquality)
+airqualityDT <- data.table(airquality)
+
+# Make Month and Day the keys:
+setkey(airqualityDT, Month, Day)
+tables()
+# see record for May 5
+airqualityDT[.(5,2)]
+# see record for June 21
+airqualityDT[.(6,21)]
+

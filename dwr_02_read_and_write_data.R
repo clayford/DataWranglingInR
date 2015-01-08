@@ -6,13 +6,11 @@
 #' ---
 
 
-
-# read.table and read.csv -------------------------------------------------
-
-
 # We usually import, or read, data into R. Data come in many formats: CSV, 
 # ASCII, XLSX, JSON, DTA (Stata), XML, HTML, etc. The format of the data dictate
 # what function we need to use.
+
+# read.table and read.csv -------------------------------------------------
 
 # data.table() - for reading in data in a tabular format separated by
 # "separators" such as spaces, commas, tabs; reads in data and returns a data
@@ -22,6 +20,10 @@ setwd("../data/")
 
 # Example: 2013 Charlottesville weather
 # http://www.wunderground.com/history/airport/KCHO/2014/2/11/CustomHistory.html
+
+# cville_weather_2013.csv is a CSV file. Columns have headers and are separated 
+# by commas. In read.table() we need to specify that with the header and sep
+# arguments.
 weather <- read.table("cville_weather_2013.csv", header=TRUE, sep=",")
 str(weather)
 
@@ -57,7 +59,10 @@ weather <- read.csv("cville_weather_2013.csv")
 # example of reading large file
 # datBig: 1,000,000 records with 3 columns: charcter, numeric, integer
 
-# compare times to read in data
+# Let's compare times to read in a large data set using using defaults and then
+# specifying arguments. The system.time() function tells you how long R code
+# takes to run.
+
 # default settings
 system.time(test <- read.csv("datBig.csv"))
 # with colClasses, nrows and  comment.char specified:
@@ -73,8 +78,9 @@ system.time(test <- read.csv("datBig.csv", colClasses=c("factor","numeric","inte
 weather <- read.csv("cville_weather_2013.csv", nrows=10)
 classes <- sapply(weather, class)
 
-# sapply(weather, class) applies the class() function to each column of the
-# weather data frame and returns a vector stating the class of each column
+# sapply(weather, class) applies the class() function to each column of the 
+# weather data frame and returns a vector stating the class of each column.
+# Don't worry we will delve deeper into apply() functions later!
 classes
 
 # we can use this vector of classes in the colClasses argument 
@@ -87,11 +93,11 @@ weather <- read.csv("cville_weather_2013.csv", colClasses=classes)
 # Combine length() and count.fields() functions
 length(count.fields("cville_weather_2013.csv", sep=","))
 
-# can also the Unix tool wc if you know your way around a terminal. 
+# Can also the Unix tool wc if you know your way around a terminal. 
 
 # read.fwf ----------------------------------------------------------------
 
-# Reads a table of fixed width formatted data into a data frame
+# Reads a table of fixed width formatted data into a data frame;
 # widths = widths of the fixed-width fields;
 
 # Example: Analysis of Arrests in Paris, June 1848
@@ -106,19 +112,36 @@ arrests <- read.fwf("ICPSR_00049/ICPSR_00049/DS0001/00049-0001-Data.txt",
                     widths=c(5,1,2,3,2,2,1,2,1,2,2,2,1,1,1,2,18))
 head(arrests)
 
-# add column names
+# Notice R added column names: V1, V2, V3, ...
+
+# We can add the real column names using the names() function. By itself the
+# names function returns the column names of a data frame, like so:
 names(arrests)
-# names from codebook
-names(arrests) <- c("ID","Source","Constant","Occup","DeptBorn","CommuneBorn","Sex",
-                    "Age","MaritalStatus","Children","Arrondissement","QuarterResided",
-                    "FirstJudicial","FinalJudicial", "FirstDecision", "FinalOutcome",
-                    "CommuneName")
+
+# But calling the names() function on a data frame and simultaneously assigning 
+# to it a vector of character names will assign those names to the data frame.
+# This is best explained with an example
+
+# First make a vector of names from codebook:
+cnames <- c("ID","Source","Constant","Occup","DeptBorn","CommuneBorn","Sex",
+            "Age","MaritalStatus","Children","Arrondissement","QuarterResided",
+            "FirstJudicial","FinalJudicial", "FirstDecision", "FinalOutcome",
+            "CommuneName")
+
+# Now call the names() function on arrests while assigning cnames to the result:
+names(arrests) <- cnames
 head(arrests)
-# 99 children? No. 99 = No information given according to codebook
+
+# 99 children? No. 99 = No information given according to codebook. You'll often
+# see missing data coded as "99" or "999" or something similar. You can make R 
+# convert these values to NA using the na.strings argument in your read.xxx()
+# function. For example:
+
+# arrests <- read.fwf("ICPSR_00049/ICPSR_00049/DS0001/00049-0001-Data.txt",
+#                     widths=c(5,1,2,3,2,2,1,2,1,2,2,2,1,1,1,2,18), na.strings="99")
+
+# Notice that other than Age and CommuneName, everything in arrests is a code.
 str(arrests)
-
-# Other than Age and CommuneName, everything in arrests is a code.
-
 
 # Excel files -------------------------------------------------------------
 
@@ -128,6 +151,8 @@ str(arrests)
 
 # read.xlsx() in xlsx package; requires Java
 # read.xls() in gdata package; requires Perl
+
+# I will demonstrate the xlsx package:
 # install.packages("xlsx") # only need to do this once
 library(xlsx)
 
@@ -178,7 +203,7 @@ seq_along(stocks)
 
 # For example...
 stocks[1]
-# assign(stocks[1], read.csv(stocks[1])) imports CSV data and names it "bbby.csv"
+# assign(stocks[1], read.csv(stocks[1])) imports bbby.csv and names it "bbby.csv"
 
 # LOOPS IN R
 
@@ -187,13 +212,17 @@ stocks[1]
 # particularly with iterative calculations. Plus the benefit of clarity in your
 # code can outweigh gains in efficiency in many circumstances.
 
-# How could we read in the stock data above without using a for loop? We could
-# use the lapply() function. This applies a function to a vector and returns a list.
+# How could we read in the stock data above without using a for loop? We could 
+# use the lapply() function. This applies a function to a vector and returns a
+# list.
 
-# apply the read.csv function to each element in the stocks vector
+# Below we apply the read.csv function to each element in the stocks vector.
+# Basically lapply takes each element of the stocks character vector and uses it
+# as the file argument in read.csv.
 allStocks <- lapply(stocks, read.csv)
 str(allStocks)
-# add names to data frames
+
+# We can name the list elements as follows:
 names(allStocks) <- stocks
 
 # Instead of 7 data frames we have 1 list of 7 data frames. Is this better?
@@ -211,17 +240,27 @@ names(allStocks) <- stocks
 # set working directort back to "data"
 setwd("../")
 
-# write a csv file of the arrest data:
-write.csv(arrests,file="arrests.csv", row.names=FALSE)
-# row.names=FALSE prevents the row numbers in R from being added as a column.
+# We can write data to a csv file using the write.csv() function. The basic 
+# syntax is write.csv(data, file, row.names) where data is typically a data 
+# frame, file is the name of the csv file you want to create, and row.names is a
+# logical setting indicating whether or not you want to include row names. I
+# suggest setting to FALSE.
+
+# Let's write the arrests data frame to a csv file:
+write.csv(arrests, file="arrests.csv", row.names=FALSE)
+
 # see also write.table()
 
-# save R objects; use ".Rda" or ".Rdata" extension
+# We can also save objects in our workspace (or memory) to a single RData file 
+# with the save() function. The syntax is save(list, file) where list is a 
+# vector of objects we want to save and file is the name of the RData file we
+# wish to create. Use the ".Rda" or ".Rdata" extension for the RData file.
+
 save(list=c("electionData", "weather", "arrests", "allStocks"), file="datasets_L02.Rda")
 
 # remove all data
 rm(list=ls())
 ls()
-# load data sets
-load("datasets_L01.Rda")
+# load an Rdata file using the load() function:
+load("datasets_L02.Rda")
 ls()

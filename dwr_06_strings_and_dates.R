@@ -190,6 +190,9 @@ grepl("Fog-Rain",weather$Events)
 # Let's create city/town indicator in popVa data frame:
 popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label)==1,1,0)
 
+# grep() and grepl() also have an ignore.case argument. When set to TRUE, case
+# is ignored so searching for "city" finds "City", "CITY", and "city". 
+
 # grep, grepl, sub and gsub become extremely powerful with regular expressions,
 # which we'll explore in a later lecture.
 

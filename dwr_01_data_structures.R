@@ -10,16 +10,27 @@
 
 # data of same type (ie, number, integer, character, logical) in one dimension
 
+# integer vector
 x1 <- 1:12
-x1 # integer
-e <- rnorm(12)
-e # number
+x1 
+class(x1)
+# numeric vector
+e <- rnorm(12) # 12 random values drawn from a standard normal dist'n 
+e 
+class(e)
+# another numeric vector
 y <- 5 + 3*x1 + e
-y # number
+y 
+class(y)
+# logical vector
+y < 20 
 test <- y < 20
-test # logical
+test 
+class(test)
+# character vector
 ch <- ifelse(y < 20, "Less Than","Greater")
-ch # character
+ch 
+class(ch)
 
 # vectors can be combined
 xy <- c(x1,y)
@@ -30,7 +41,7 @@ class(xy)
 all <- c(x1, e, y, test, ch)
 all
 class(all)
-# notice that R didn't issue a warning.
+# everything converted to character. Notice that R didn't issue a warning.
 
 # accessing elements of a vector with bracket notation
 e
@@ -40,6 +51,15 @@ e[c(1,3,6)] # first, third and sixth
 e[e > 0] # "e such that e is greater than 0"
 e[e > 0 & e < 1] # "e such that e is greater than 0 and less than 1"
 
+# accessing elements of a vector with functions
+max(e)
+min(e)
+range(e)
+
+# information about a vector
+length(e)
+class(e)
+object.size(e)
 
 # Matrices ----------------------------------------------------------------
 
@@ -47,6 +67,10 @@ e[e > 0 & e < 1] # "e such that e is greater than 0 and less than 1"
 # Probably good to think of a matrix as a vector with instructions on how to lay
 # out the data on screen.
 
+
+# Use the matrix() function to create a matrix. The basic syntax is matrix(data,
+# nrow, ncol), where data is typically a vector, nrow is number of rows, and
+# ncol is the number of columns.
 x2 <- matrix(1:12, ncol=2)
 x2 # notice data entered "by column"
 
@@ -75,7 +99,17 @@ e2[c(1,3),c(1,3)] # row 1 and 3, column 1 and 3
 e2[3,] # row 3
 e2[,2] # column 2; output as vector
 e2[,2, drop=F] # column 2; output as 1 column matrix
-e2[cbind(c(1,2,3),c(1,2,3))] # row 1 col 1, row 2 col 2, and row 3 col 3
+
+# advanced concept
+z <- cbind(c(1,2,3),c(1,3,4))
+z
+# what does the following return?
+e2
+e2[z] 
+# Returns elements in row 1 col 1, row 2 col 3, and row 3 col 4
+
+# There are also several useful matrix algebra functions in R, but we won't
+# cover those.
 
 # Arrays ------------------------------------------------------------------
 
@@ -106,19 +140,24 @@ dat
 dat <- data.frame(id=x1, error=e, response=y, condition=test, result=ch)
 dat
 
-# use the str function to see the structure of an R object
+# we can access and/or extract columns of a data frame using the $ operator:
+dat$response
+dat$condition
+dat$response + dat$condition
+
+# try typing dat$ and hitting tab in either the R script or console. What
+# happens?
+
+# The str function displays the structure of an R object. This is useful for
+# data frames:
 str(dat)
 
 # What happened to our character vector? converted to Factor. R does this by
 # default when character vectors are added to a data frame.
+
+# What is a factor? Technically, a factor is a vector of "integer codes" with a
+# "levels" attribute. Conceptually, it's simply a categorical variable.
 class(dat$result)
-
-# Quick side note: Notice we can access the vectors of a data frame directly
-# using the "$" notation: "dataframe name" + "$" + "column name"
-dat$result
-
-# What is a factor? A factor is a vector of "integer codes" with a "levels"
-# attribute.
 str(dat$result)
 # 2 = "Greater", 1 = "Less Than"
 
@@ -133,6 +172,13 @@ dat[,"condition"] # using column name to access column
 dat$condition # another way
 dat[1,] # row 1
 
+# R also has functions for returning information about data frames such as the
+# number of rows and columns:
+nrow(dat)
+ncol(dat)
+dim(dat) # both number of rows and columns
+summary(dat)
+
 # Lists -------------------------------------------------------------------
 
 # data of different types. There is no restriction on shape. A list can contain 
@@ -141,7 +187,8 @@ dat[1,] # row 1
 # statistical analyses are often stored in a list. A data frame is actually a
 # list comprised of vectors of the same length.
 
-# store 2 vectors, a matrix, an array and data frame in a list
+# store 2 vectors, a matrix, an array and data frame in a list using the list()
+# function:
 exList <- list(e, y, x2, x3, dat)
 exList
 
@@ -157,6 +204,8 @@ exList
 # now we can access list elements by name
 exList$response
 exList$DataFrame
+# we can also use the "$" notation repeatedly to access elements
+exList$DataFrame$response
 
 # lists can contain other lists
 exList2 <- list(error=e, response=y, myMatrix=x2, anArray=x3, DataFrame=dat, 
@@ -164,17 +213,15 @@ exList2 <- list(error=e, response=y, myMatrix=x2, anArray=x3, DataFrame=dat,
 # look at the structure
 str(exList2)
 
-# accessing elements of a list
-
-# we can use the "$" notation repeatedly to access elements
+# Again, accessing elements of a list
 exList2$DataFrame$error
 exList2$myList$DataFrame$error
 
 # can also use brackets
-# one set accesses list element and returns list
+# one set of brackets accesses list element and returns list
 exList2[5]
 class(exList2[5])
-# two sets access list element and returns the element
+# two sets of brackets access list element and returns the element
 exList2[[5]]
 class(exList2[[5]])
 
@@ -197,7 +244,7 @@ is.na(dat$error)
 # You can think of this function as asking each element in the vector the
 # question "are you missing?"
 
-# We can reverse it and ask "are you not missing?"
+# We can reverse it and ask "are you not missing?" with ! 
 !is.na(dat$error)
 
 # The all(), any() and which() functions are useful for identifying and working
@@ -259,7 +306,10 @@ sum(!complete.cases(airquality))
 # which rows have incomplete cases?
 which(!complete.cases(airquality))
 
-# we can save the output of the above line of code and use it to view the subset
+# What proportion of airquality rows contain complete cases?
+sum(complete.cases(airquality))/nrow(airquality)
+
+# We can save the output of the above line of code and use it to view the subset
 # of records with missing data.
 miss <- which(!complete.cases(airquality))
 airquality[miss,]
