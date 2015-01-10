@@ -56,7 +56,8 @@ apply(x, 2, function(x)sd(x)/sqrt(length(x)))
 # apply a function across rows
 apply(x, 1, sum)
 
-# apply will work on data frames as well, but internally R converts it to a matrix first.
+# apply will work on data frames as well, but internally R converts it to a
+# matrix first.
 x <- data.frame(x)
 class(x)
 apply(x, 2, mean)
@@ -88,7 +89,7 @@ sapply(y, function(x) mean(x + 10))
 # generate random data from Normal distributions (10 each)
 z <- c(rnorm(10,120,10), rnorm(10,180,10))
 z
-# generate a factor with 2 levels of 10 each
+# generate a factor with 2 levels of 10 each using the gl() function.
 g <- gl(n = 2, k = 10)
 g
 
@@ -141,7 +142,7 @@ electionData <- electionData[-c(53:56),]
 # Now identify row numbers for rows of all missing data and drop from data 
 # frame. Notice that electionData is a data frame but we use apply(). Can we do 
 # that? Yes, just know that apply() first converts data frames to matrices 
-# before it applies a function. In this case it's OK because NA is the same no
+# before it applies a function. In this case it's OK because NA is the same no 
 # matter the class.
 drop <- which(apply(electionData, 1, function(x)all(is.na(x))))
 electionData <- electionData[-drop,]
@@ -169,9 +170,11 @@ weather[weather$Temp.Range == -33,]
 weather[weather$Temp.Range < 0,]
 plot(weather$Temp.Range) # plot against index value
 
+# Looks like Min.TemperatureF = 99 may be a missing value code.
+
 # Let's go back to our freezing variable and make that an indicator for days
 # that never got above 32:
-weather$freezing <- ifelse(weather$Max.TemperatureF<=32,1,0)
+weather$freezing <- ifelse(weather$Max.TemperatureF<=32, 1, 0)
 sum(weather$freezing==1) # number of days that never got above freezing
 which(weather$freezing==1) # which rows?
 weather[weather$freezing==1,"EST", drop=TRUE] # which days?

@@ -1,7 +1,7 @@
 ---
 title: "R and RStudio Essentials"
 author: "Clay Ford"
-date: "Sprint 2015"
+date: "Spring 2015"
 output: beamer_presentation
 ---
 
@@ -62,22 +62,18 @@ R creates and manipulates *objects*. Examples of objects are vectors, data frame
 
 You can create as many objects as memory allows.
 
-```{r}
-# create vector of character strings
-gender <- c("Male","Female","Male") 
+_create vector of character strings_:  
+`gender <- c("Male","Female","Male")`
 
-# create vector of numbers
-x <- seq(0, 10, by=2) 
+_create vector of numbers_:  
+`x <- seq(0, 10, by=2)` 
 
-# create data frame
-df <- read.csv("../data/datBig.csv") 
-```
-
-Note: Text prefaced with `#` are comments and ignored by R. 
+_create data frame_:  
+`df <- read.csv("scores.csv")`
 
 ## R basics - packages
 
-All functions belong to *packages*. R comes with about 25 packages, but as of August 2014, there are *over 5800* user-contributed packages!
+All functions belong to *packages*. R comes with about 25 packages, but as of January 2015, there are *over 6200* user-contributed packages!
 
 To use functions in a package, the package must be installed and loaded. 
 
@@ -157,6 +153,8 @@ looks in your working directory for `file.csv`. For the code to work, you need t
 
 ## Setting your working directory - R code
 
+The function to see your working directory: `getwd()`
+
 The function to set your working directory is `setwd`. For example:
 
 `setwd("~/_clients/Allen/")`
@@ -173,7 +171,7 @@ When setting your working directory:
 
 - Type `setwd()` (notice RStudio automatically adds the closing parens)
 - Type `""` in the parens (notice RStudio automatically adds the closing double-quote)
-- Type `~` in the double quotes and hit Tab; you should see a selection of available directories in your computer's home directory.
+- Type `~/` in the double quotes and hit Tab; you should see a selection of available directories in your computer's home directory.
 - arrow up and down to find the desired directory and hit Tab.
 
 ## Setting your working directory - RStudio
@@ -196,7 +194,6 @@ Start typing a command and hit `Tab`. All functions in currently loaded packages
 
 After you typed your command and opened a parens, hit `Tab` again. In most cases (not all) you will get a pick-list of arguments for that function.
 
-Finally, typing `Alt + -` will insert the assignment operator: `<-`
 
 ## Using Help
 
@@ -207,9 +204,11 @@ All R users occasionally need help. Every last one. Know how to use R Help.
 
 A help page for a function has the name of the function at the top left next to the package it's in. For example:
 
-`ymd {lubridate}`
+`abline {graphics}`
 
-The function `ymd` is part of the _lubridate_ package. 
+The function `abline` is part of the _graphics_ package. 
+
+Use the `example()` function to run the examples in a help page: `example(abline)`
 
 ## Vignettes
 
