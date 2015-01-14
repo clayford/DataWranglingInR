@@ -32,7 +32,7 @@ ch <- ifelse(y < 20, "Less Than","Greater")
 ch 
 class(ch)
 
-# vectors can be combined
+# vectors can be combined using the c() function
 xy <- c(x1,y)
 xy
 # notice all elements in vector converted to numeric
@@ -69,11 +69,17 @@ object.size(e)
 
 
 # Use the matrix() function to create a matrix. The basic syntax is matrix(data,
-# nrow, ncol), where data is typically a vector, nrow is number of rows, and
-# ncol is the number of columns.
+# nrow, ncol), where data is typically a vector, nrow is number of rows, and 
+# ncol is the number of columns. By default, a matrix is "filled" by starting at
+# the top of the first column and going down, then going down the second column,
+# etc.
 x2 <- matrix(1:12, ncol=2)
-x2 # notice data entered "by column"
+x2 # notice data filled by column
 
+# to fill by row, set the byrow argument to TRUE
+matrix(1:12, ncol=2, byrow = TRUE)
+
+# let's create more matrices:
 e2 <- matrix(rnorm(12), nrow=3)
 e2
 
@@ -134,19 +140,24 @@ x4
 # understand distinction between matrices and data frames.
 
 # combine vectors from above into data frame
-dat <- data.frame(x1, e, y, test, ch)
+dat <- data.frame(x1, y, e, test, ch)
 dat
 # can provide descriptive column names
-dat <- data.frame(id=x1, error=e, response=y, condition=test, result=ch)
+dat <- data.frame(id=x1, response=y, error=e, condition=test, result=ch)
 dat
 
 # we can access and/or extract columns of a data frame using the $ operator:
 dat$response
 dat$condition
-dat$response + dat$condition
-
+dat$response + dat$error
+sum(dat$condition)
 # try typing dat$ and hitting tab in either the R script or console. What
 # happens?
+
+
+x <- 1:3
+y <- 1:6
+(dat2 <- data.frame(x,y))
 
 # The str function displays the structure of an R object. This is useful for
 # data frames:
@@ -157,9 +168,6 @@ str(dat)
 
 # What is a factor? Technically, a factor is a vector of "integer codes" with a
 # "levels" attribute. Conceptually, it's simply a categorical variable.
-class(dat$result)
-str(dat$result)
-# 2 = "Greater", 1 = "Less Than"
 
 # We will study factors in greater detail in a later lecture; for now it is
 # enough to think of Factors as the class for categorical variables.
@@ -169,7 +177,7 @@ dat[1:2, 1:3] # first two rows, first three columns
 dat[,4] # column 4 as a vector
 dat[,4, drop=F] # column 4 as a column of a data frame
 dat[,"condition"] # using column name to access column
-dat$condition # another way
+dat$condition # and of course with $ operator
 dat[1,] # row 1
 
 # R also has functions for returning information about data frames such as the
@@ -201,10 +209,11 @@ str(exList)
 exList <- list(error=e, response=y, myMatrix=x2, anArray=x3, DataFrame=dat)
 exList
 
-# now we can access list elements by name
+# Now we can access list elements by name using the $ operator just as we can
+# with data frames.
 exList$response
 exList$DataFrame
-# we can also use the "$" notation repeatedly to access elements
+# we can also use the $ notation repeatedly to access elements
 exList$DataFrame$response
 
 # lists can contain other lists
@@ -213,10 +222,10 @@ exList2 <- list(error=e, response=y, myMatrix=x2, anArray=x3, DataFrame=dat,
 # look at the structure
 str(exList2)
 
-# Again, accessing elements of a list
+# Again, accessing elements of a list using the $ operator
 exList2$DataFrame$error
 exList2$myList$DataFrame$error
-
+exList2$myList$DataFrame$error
 # can also use brackets
 # one set of brackets accesses list element and returns list
 exList2[5]
@@ -239,13 +248,13 @@ dat[1,2] <- NA
 dat[1,]
 
 # we can use the is.na() function to test for missing values
-is.na(dat$error)
+is.na(dat$response)
 
 # You can think of this function as asking each element in the vector the
 # question "are you missing?"
 
 # We can reverse it and ask "are you not missing?" with ! 
-!is.na(dat$error)
+!is.na(dat$response)
 
 # The all(), any() and which() functions are useful for identifying and working
 # with missing values:
@@ -255,20 +264,20 @@ is.na(dat$error)
 # which() - identifies which elements are true
 
 # are all elements in vector missing?
-all(is.na(dat$error))
+all(is.na(dat$response))
 # are any elemens in vector missing?
-any(is.na(dat$error)) 
+any(is.na(dat$response)) 
 # which elements are missing?
-which(is.na(dat$error))
+which(is.na(dat$response))
 
 # again we can ask the opposite question:
 
 # are all elements not missing?
-all(!is.na(dat$error))
+all(!is.na(dat$response))
 # are any elements not missing?
-any(!is.na(dat$error))
+any(!is.na(dat$response))
 # which elements are not missing?
-which(!is.na(dat$error))
+which(!is.na(dat$response))
 
 # another useful function is complete.cases(). It returns a logical vector
 # indicating which rows have no missing values.
@@ -282,7 +291,7 @@ complete.cases(dat)
 
 # We can combine the above functions to help us quickly identify missing data in
 # large data frames. Let's use the airquaility data set that comes with R to
-# illustrate.
+# illustrate. Enter data() at the console to see data that come with R.
 
 head(airquality)
 

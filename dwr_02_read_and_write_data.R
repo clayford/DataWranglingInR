@@ -7,34 +7,48 @@
 
 
 # We usually import, or read, data into R. Data come in many formats: CSV, 
-# ASCII, XLSX, JSON, DTA (Stata), XML, HTML, etc. The format of the data dictate
-# what function we need to use.
+# ASCII, XLSX, JSON, DTA (Stata), SAV (SPSS) XML, HTML, etc. The format of the
+# data dictate what function we need to use.
+
+
+setwd("../data/")
+# Note: two dots (..) mean "go back up one level in the directory"
+
 
 # read.table and read.csv -------------------------------------------------
 
-# data.table() - for reading in data in a tabular format separated by
+# read.table() - for reading in data in a tabular format separated by
 # "separators" such as spaces, commas, tabs; reads in data and returns a data
 # frame
-
-setwd("../data/")
 
 # Example: 2013 Charlottesville weather
 # http://www.wunderground.com/history/airport/KCHO/2014/2/11/CustomHistory.html
 
-# cville_weather_2013.csv is a CSV file. Columns have headers and are separated 
-# by commas. In read.table() we need to specify that with the header and sep
-# arguments.
+# cville_weather_2013.csv is a CSV file. CSV = Comma Separates Value. That means
+# fields are separated by commas. CSV files can be viewed in Excel or any text 
+# editor. This particular file also has column headers. In read.table() we need
+# to specify these properties with the header and sep arguments.
 weather <- read.table("cville_weather_2013.csv", header=TRUE, sep=",")
 str(weather)
 
-# read.csv() is the same as read.table() with different defaults;
-# Easier to use read.csv() when reading CSV files: 
+# read.csv() is the same as read.table() with different defaults (header = TRUE,
+# sep = ","). It's easier to use read.csv() when reading CSV files:
 weather <- read.csv("cville_weather_2013.csv")
+
+# After reading in data to a data frame, it's a good idea to inspect the top and
+# bottom of the data frame (ie, the first few and last few rows). Two basic
+# functions are head() and tail(), which show the first and last 6 records,
+# respectively. Use the n= argument to change the number of rows displayed
+head(weather)
+tail(weather, n=3)
+
+# NOTE: head() and tail() work on vectors as well:
+tail(weather$Max.TemperatureF, n=5)
 
 # read.table and read.csv have many arguments! See help(read.table) 
 # Arguments of note: 
 
-# stringsAsFactors - logical indicating whether or not to read character
+# stringsAsFactors - logical vector indicating whether or not to read character 
 # vectors as factors. Defaults to TRUE.
 
 # colClasses - A character vector of classes to be assumed for the columns. 
@@ -54,7 +68,7 @@ weather <- read.csv("cville_weather_2013.csv")
 # Using nrows, even as a mild over-estimate, will help memory usage (but not speed).
 # 
 # Using comment.char = "" will be appreciably faster than the read.table 
-# default.
+# default (comment.char = "#")
 
 # example of reading large file
 # datBig: 1,000,000 records with 3 columns: charcter, numeric, integer
@@ -91,9 +105,8 @@ weather <- read.csv("cville_weather_2013.csv", colClasses=classes)
 
 # QUESTION: How can I tell how many rows I have in my data? A little hack:
 # Combine length() and count.fields() functions
-length(count.fields("cville_weather_2013.csv", sep=","))
+length(count.fields(file="cville_weather_2013.csv", sep=","))
 
-# Can also the Unix tool wc if you know your way around a terminal. 
 
 # read.fwf ----------------------------------------------------------------
 
@@ -108,7 +121,7 @@ length(count.fields("cville_weather_2013.csv", sep=","))
 # Data is ASCII in fixed-width format;
 # codebook tells you column that variable starts and how wide it is;
 
-arrests <- read.fwf("ICPSR_00049/ICPSR_00049/DS0001/00049-0001-Data.txt",
+arrests <- read.fwf(file="00049-0001-Data.txt",
                     widths=c(5,1,2,3,2,2,1,2,1,2,2,2,1,1,1,2,18))
 head(arrests)
 
@@ -137,7 +150,7 @@ head(arrests)
 # convert these values to NA using the na.strings argument in your read.xxx()
 # function. For example:
 
-# arrests <- read.fwf("ICPSR_00049/ICPSR_00049/DS0001/00049-0001-Data.txt",
+# arrests <- read.fwf("00049-0001-Data.txt",
 #                     widths=c(5,1,2,3,2,2,1,2,1,2,2,2,1,1,1,2,18), na.strings="99")
 
 # Notice that other than Age and CommuneName, everything in arrests is a code.
@@ -157,7 +170,7 @@ str(arrests)
 library(xlsx)
 
 # Example: 2012 Presidential Election Data
-# need to specify worksheet name or number: sheetName="State"
+# need to specify worksheet name or number: sheetName="State";
 # can also use sheetIndex=2
 electionData <- read.xlsx("Pres_Election_Data_2012.xlsx", sheetName="State")
 str(electionData)
@@ -180,29 +193,46 @@ str(electionData)
 
 # Read in multiple files --------------------------------------------------
 
-# historical prices from four stocks (downloaded from Google finance)
-setwd("stocks/")
-list.files() # see just files in directory (not other directories)
+# historical prices from seven stocks (downloaded from Google finance)
+setwd("stocks")
+
+# bbby - Bed Bath and Beyond
+# flws - 1-800-Flowers.Com 
+# foxa - Twenty-First Century Fox Inc
+# ftd - FTD Companies Inc
+# tfm - The Fresh Market Inc
+# twx - Time Warner Inc
+# viab - Viacom, Inc.
+
+# I would like to read these files into R without having to do 7 instances of
+# the read.csv() function. Below we'll look at two ways we can do this in R.
+
+# First, we'll use the list.files() function. This function will show just files
+# in the current working directory (not other directories) in the form of a
+# character vector.
+list.files() 
+
 stocks <- list.files() # save file names into vector
 stocks[1] # file name of first file
 
-# quick and dirty: use a for loop
+# One method: use a "for" loop
 for(i in seq_along(stocks)){
-  assign(stocks[i], read.csv(stocks[i])) 
+  assign(stocks[i], read.csv(file=stocks[i])) 
 }
 
 # Let's break down the code above:
-# seq_along(stocks) simply outputs the vector indices of stocks 
+# seq_along() simply outputs the indices of a vector
 seq_along(stocks)
 
-# the "for loop" executes the code within, each time incrementing the value of
-# i.
+# The "for" loop executes the code within, each time incrementing the value of 
+# i. The value of i goes from 1 - 7. First time through loop, i = 1. Next time,
+# i =2, and so forth until i = 7.
 
 # within the loop, we "assign" value of read.csv(stocks[i]) to an object named
 # stocks[i]. 
 
 # For example...
-stocks[1]
+assign(stocks[1], read.csv(stocks[1])
 # assign(stocks[1], read.csv(stocks[1])) imports bbby.csv and names it "bbby.csv"
 
 # LOOPS IN R

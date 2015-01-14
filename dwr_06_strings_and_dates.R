@@ -19,7 +19,7 @@ load("../data/datasets_L05.Rda")
 # I set stringsAsFactors to FALSE because I don't want the character strings 
 # treated as factors. The character string associated with each row is unique so
 # there's no advantage or reason to store as a factor. 
-popVa <- read.csv("../data/PEP_2012_PEPANNRES/PEP_2012_PEPANNRES_with_ann.csv",
+popVa <- read.csv("PEP_2012_PEPANNRES_with_ann.csv",
                   stringsAsFactors=FALSE)
 head(popVa)
 str(popVa)
