@@ -139,7 +139,9 @@ head(games2[order(games2$G_batting, decreasing=T),],5)
 # so dplyr is not much faster than base R (in this example), but the syntax is
 # easier to understand and learn.
 
-# dplyr also provides ability to chain operations using the %>% operator.
+# dplyr also provides ability to chain operations using the %>% operator. Use
+# Ctrl + Shift + M to quickly enter the chaining operator: %>%
+
 
 # Here's the same thing as above;
 # functions chained left-to-right with the %>% operator

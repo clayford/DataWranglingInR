@@ -8,8 +8,12 @@
 
 # We usually import, or read, data into R. Data come in many formats: CSV, 
 # ASCII, XLSX, JSON, DTA (Stata), SAV (SPSS) XML, HTML, etc. The format of the
-# data dictate what function we need to use.
+# data dictate what function we need to use. 
 
+# In this lecture we cover the following:
+# - CSV
+# - ASCII/TXT
+# - XLSX
 
 setwd("../data/")
 # Note: two dots (..) mean "go back up one level in the directory"
@@ -24,7 +28,7 @@ setwd("../data/")
 # Example: 2013 Charlottesville weather
 # http://www.wunderground.com/history/airport/KCHO/2014/2/11/CustomHistory.html
 
-# cville_weather_2013.csv is a CSV file. CSV = Comma Separates Value. That means
+# cville_weather_2013.csv is a CSV file. CSV = Comma Separated Value. That means
 # fields are separated by commas. CSV files can be viewed in Excel or any text 
 # editor. This particular file also has column headers. In read.table() we need
 # to specify these properties with the header and sep arguments.
@@ -104,9 +108,10 @@ weather <- read.csv("cville_weather_2013.csv", colClasses=classes)
 # in handy with larger files.
 
 # QUESTION: How can I tell how many rows I have in my data? A little hack:
-# Combine length() and count.fields() functions
+# Combine length() and count.fields() functions, like so:
 length(count.fields(file="cville_weather_2013.csv", sep=","))
-
+# The next file has data with no separators:
+length(count.fields(file="00049-0001-Data.txt", sep=""))
 
 # read.fwf ----------------------------------------------------------------
 
@@ -228,12 +233,13 @@ seq_along(stocks)
 # i. The value of i goes from 1 - 7. First time through loop, i = 1. Next time,
 # i =2, and so forth until i = 7.
 
-# within the loop, we "assign" value of read.csv(stocks[i]) to an object named
-# stocks[i]. 
+# within the loop, we "assign" the value of read.csv(stocks[i]), which is a data
+# frame, to an object named stocks[i].
 
-# For example...
-assign(stocks[1], read.csv(stocks[1])
+# For example, when i = 1,
 # assign(stocks[1], read.csv(stocks[1])) imports bbby.csv and names it "bbby.csv"
+# For example, when i = 2,
+# assign(stocks[2], read.csv(stocks[2])) imports flws.csv and names it "flws.csv"
 
 # LOOPS IN R
 
@@ -243,12 +249,20 @@ assign(stocks[1], read.csv(stocks[1])
 # code can outweigh gains in efficiency in many circumstances.
 
 # How could we read in the stock data above without using a for loop? We could 
-# use the lapply() function. This applies a function to a vector and returns a
-# list.
+# use the lapply() function. This applies a function to vector (or vectors) and
+# returns a list.
 
-# Below we apply the read.csv function to each element in the stocks vector.
+# Below we apply the read.csv function to each element in the stocks vector. 
 # Basically lapply takes each element of the stocks character vector and uses it
-# as the file argument in read.csv.
+# as the file argument in read.csv. Below, lapply(stocks, read.csv) is basically
+# shorthand for the following:
+# allStocks <- list(read.csv("bbby.csv"), read.csv("flws.csv"), 
+#                   read.csv("foxa.csv"), read.csv("ftd.csv"),
+#                   read.csv("tfm.csv"), read.csv("twx.csv"),
+#                   read.csv("viab.csv"))
+
+# So lapply "applies" the read.csv function to each element of the stocks
+# vector, which are actually CSV file names in our working directory.
 allStocks <- lapply(stocks, read.csv)
 str(allStocks)
 
@@ -288,9 +302,17 @@ write.csv(arrests, file="arrests.csv", row.names=FALSE)
 
 save(list=c("electionData", "weather", "arrests", "allStocks"), file="datasets_L02.Rda")
 
+# NOTE: we actually use datasets_L02.Rda in the next lecture.
+
 # remove all data
 rm(list=ls())
+# How that works: ls() is a function that lists all objects in the workspace as 
+# a vector. list is an argument that takes a vector of data. Hence rm(list=ls())
+# clears the workspace. Verify:
 ls()
+
 # load an Rdata file using the load() function:
 load("datasets_L02.Rda")
 ls()
+
+ 
