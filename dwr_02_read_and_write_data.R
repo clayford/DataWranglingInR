@@ -7,7 +7,7 @@
 
 
 # We usually import, or read, data into R. Data come in many formats: CSV, 
-# ASCII, XLSX, JSON, DTA (Stata), SAV (SPSS) XML, HTML, etc. The format of the
+# ASCII, XLSX, JSON, DTA (Stata), SAV (SPSS), XML, HTML, etc. The format of the
 # data dictate what function we need to use. 
 
 # In this lecture we cover the following:
@@ -145,6 +145,7 @@ cnames <- c("ID","Source","Constant","Occup","DeptBorn","CommuneBorn","Sex",
             "Age","MaritalStatus","Children","Arrondissement","QuarterResided",
             "FirstJudicial","FinalJudicial", "FirstDecision", "FinalOutcome",
             "CommuneName")
+cnames
 
 # Now call the names() function on arrests while assigning cnames to the result:
 names(arrests) <- cnames
@@ -313,6 +314,6 @@ ls()
 
 # load an Rdata file using the load() function:
 load("datasets_L02.Rda")
-ls()
+
 
  

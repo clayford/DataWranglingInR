@@ -18,6 +18,11 @@ load("../data/datasets_L03.Rda")
 sort(allStocks$bbby.csv$Volume)[1:10]
 sort(allStocks$bbby.csv$Volume, decreasing = TRUE)[1:10]
 
+# Also note the difference:
+sort(allStocks$bbby.csv$Volume)[1:10]
+sort(allStocks$bbby.csv$Volume[1:10])
+
+
 # Sorting a data frame is somewhat tricky. We use the order() function on a 
 # vector (or vectors) which returns the index numbers of the original vector(s)
 # placed in the necessary order to sort the vector/vector(s)
@@ -36,7 +41,8 @@ df
 order(y,x)
 df[order(y,x),]
 
-# Sort the weather data on Max.TemperatureF
+# Sort the weather data on Max.TemperatureF and only show the first 6 rows and
+# first 3 columns:
 head(weather[order(weather$Max.TemperatureF),c(1:3)])
 
 # sorting on two columns, first ascending, the second descending:
@@ -50,7 +56,7 @@ head(weather[order(weather$Max.TemperatureF, -weather$Mean.TemperatureF),c(1:3)]
 # We often desire to look at or analyze a subset of data that meet certain 
 # conditions. Maybe we want to look at all individuals over the age of 40, or 
 # all males over the age of 40, or all males over the age of 40 who weigh more
-# than 250 lbs, and so on.
+# than 250 lbs, and so on. We
 
 # One way to subset data is combining conditions with subscripting brackets. For
 # example, our weather data has an Events column.
@@ -59,23 +65,26 @@ summary(weather$Events)
 # Say we wanted to select only days that experienced "Rain-Snow" events. I'm 
 # also only selecting a few columns strictly for presentation purposes, though
 # selecting columns is also part of subsetting data.
-weather[weather$Events=="Rain-Snow",c(1:5,25)]
+weather[weather$Events=="Rain-Snow", c(1:5)]
+weather[weather$Events=="Rain-Snow" & weather$Min.TemperatureF<32, c(1:5)]
 
 # When working with data frames it's usually easier to use the subset() function
 # to subset. The basic syntax is subset(x, subset, select) where x is a data 
 # frame, subset is the subsetting condition, and select indicates the columns to
 # keep. The following duplicates what we did with subsetting brackets.
-subset(weather, subset= Events=="Rain-Snow", c(1:5,25))
+subset(weather, subset= Events=="Rain-Snow", c(1:5))
+subset(weather, Events=="Rain-Snow" & Min.TemperatureF<32, c(1:5))
+# don't have to specify subset= since it's the 2nd argument.
 
 # can also exclude columns using - (minus sign)
-subset(weather, subset= Events=="Rain-Snow", select= -c(6:24))
+subset(weather, subset= Events=="Rain-Snow", select= -c(6:27))
 
 # save the result
 rsDays <- subset(weather, subset= Events=="Rain-Snow",
                     select=c(EST,Cloud.Cover.Index))
 # note the row numbers are preserved from original data frame
 rsDays 
-# Here's how to reset the row numbers
+# To reset the row numbers, assign NULL to the the row.names() function like so:
 row.names(rsDays) <- NULL 
 rsDays
 
@@ -85,17 +94,22 @@ rsDays
 subset(weather, Max.Humidity < 80 & Events=="Rain",
        select=c(EST, Mean.TemperatureF, Mean.VisibilityMiles))
 
+# Conditional operators:
+# &   AND
+# |   OR
+# ==  EQUAL
+# !=  NOT EQUAL
+
 # When a function supports "formula" notation, subsetting is often supported via
-# a subset argument. A common use is in linear modeling. For example, say we 
-# wanted to model mean temperature as a linear function of mean pressure and 
-# mean dew point but only for days where Max.Humidity < 100. We can use the
-# subset argument in the call to lm() as follows:
-mod1 <- lm(Mean.TemperatureF ~ Mean.Sea.Level.PressureIn + MeanDew.PointF, 
-           data=weather, subset= Max.Humidity < 100)
-mod1
-rm(mod1)
+# a subset argument. A common use is in plotting. For example, say we 
+# wanted to plot mean temperature versus mean pressure, but
+# only for days where Max.Humidity < 100. We can use the subset argument in the
+# call to plot() as follows:
+plot(Mean.TemperatureF ~ Mean.Sea.Level.PressureIn, 
+     data=weather, subset= Max.Humidity < 100)
+nrow(subset(weather, subset= Max.Humidity < 100))
 # This can allow us to work with one data frame instead of several subsetted
-# data frames if we want to build multiple models.
+# data frames.
 
 # Another way of subsetting data is via the split() function. split divides the 
 # data in the vector x into the groups defined by f. The basic syntax is split(x
@@ -113,6 +127,8 @@ temps <- split(weather$Mean.TemperatureF, weather$Events)
 # Since temps is a list, we need to use either lapply or sapply. I choose sapply
 # to simplify the output:
 sapply(temps,mean)
+
+# You'll recall we did the same thing in the last lecture using tapply.
 
 # We should pause here and take note of a couple of things. First there are many
 # observations in weather that have no Event label. We should do something about
@@ -159,6 +175,12 @@ hist(arrests$Children)
 par(mfrow=c(1,1))
 summary(arrests$Age)
 summary(arrests$Children)
+
+# What we did above can also be used to impute missing data with, say, a mean.
+# For example, if so inclined, we could now replace the NA's in the
+# arrests$Children column with the mean, like so:
+
+# arrests$Children[is.na(arrests$Children)] <- round(mean(arrests$Children, na.rm=TRUE))
 
 
 # Factors -----------------------------------------------------------------
@@ -216,9 +238,9 @@ as.character(weather$Events)[1:10]
 # - reorder levels
 
 # To create factors use the factor() function; the optional labels argument 
-# allows you to define your own labels. Let's make Cloud.Cover.Index an 
-# unordered factor (ie, a nominal categorical variable). Calling summary on it
-# shows us that it is currently a numeric.
+# allows you to define your own labels. Let's make Cloud.Cover.Index a factor
+# (ie, a nominal categorical variable). Calling summary on it shows us that it
+# is currently a numeric.
 summary(weather$Cloud.Cover.Index)
 # Now make it a factor:
 weather$Cloud.Cover.Index <- factor(weather$Cloud.Cover.Index)
@@ -229,20 +251,11 @@ class(weather$Cloud.Cover.Index)
 weather$Cloud.Cover.Index[1:10]
 
 
-# How about we make Cloud.Cover.Index an ordered factor (ie, an ordered
-# categorical variable); notice the ordered=TRUE argument:
-weather$Cloud.Cover.Index <- factor(weather$Cloud.Cover.Index, ordered=TRUE)
-summary(weather$Cloud.Cover.Index)
-levels(weather$Cloud.Cover.Index)
-class(weather$Cloud.Cover.Index)
-weather$Cloud.Cover.Index[1:10]
-
 # Notice NA does not get its own factor level by default. We can change that.
 # Let's keep NA as a category and order it to come first; use levels= argument
 # to change order of factor levels
 weather$Cloud.Cover.Index <- factor(weather$Cloud.Cover.Index, 
                                     levels=c(NA, 0:8),
-                                    ordered=TRUE,
                                     exclude=NULL) # do not exclude NA
 summary(weather$Cloud.Cover.Index)
 levels(weather$Cloud.Cover.Index)
@@ -266,7 +279,7 @@ levels(weather$Cloud.Cover.Index)
 weather$Cloud.Cover.Index[1:10]
 
 # Let's go ahead and add a level that says "None" for days with no weather Events
-levels(weather$Events)[1]
+levels(weather$Events)
 levels(weather$Events)[1] <- "None"
 levels(weather$Events)
 
@@ -280,20 +293,7 @@ gender
 gender <- relevel(gender, ref="M")
 gender
 
-# This has implications for statistical modelling. Let's generate some data and
-# investigate:
-group <- factor(c(rep("A",50), rep("B",50), rep("C",50)))
-value <- c(rnorm(50,5,1), rnorm(50,15,1), rnorm(50,25,1))
-mod <- lm(value ~ group)
-summary(mod)
-# Notice there is no coefficient for group A. That's because it's the baseline. 
-# In this model it's actually the intercept. The coefficients for B and C 
-# represent their mean difference from level A. If we wanted C to be baseline,
-# we would need to relevel the factor.
-group <- relevel(group, ref="C")
-mod <- lm(value ~ group)
-summary(mod)
-
+# This has implications for statistical modelling. 
 
 # Remember the election data?
 str(electionData)
@@ -357,16 +357,6 @@ weather$PrecipitationIn <- ifelse(weather$PrecipitationIn=="T","0.001",weather$P
 weather$PrecipitationIn <- as.numeric(weather$PrecipitationIn)
 summary(weather$PrecipitationIn)
 
-# Another approach in this scenario could be to first subset the precipitation 
-# vector to drop "T", and then convert to numeric to take the mean. Perhaps we 
-# should drop the 0 amounts as well so we could calculate mean precipitation of 
-# those days that had significant precipitation. We can do that with the numeric
-# data as follows:
-weather$PrecipitationIn[weather$PrecipitationIn > 0.001]
-mean(weather$PrecipitationIn[weather$PrecipitationIn > 0.001])
-# or calculate the total precip for the year:
-sum(weather$PrecipitationIn[weather$PrecipitationIn > 0.001])
-
 
 # Converting numeric to factor --------------------------------------------
 
@@ -387,11 +377,15 @@ meanHumGr1 <- cut(weather$Mean.Humidity,4)
 table(meanHumGr1)
 # By default, labels are constructed using "(a,b]" interval notation
 
-# We can also make four groups woth roughly equal numbers in each:
+# We can also make four groups with roughly equal numbers in each using the 
+# quantile() function. The quantile() function returns quartiles (0%, 25%, 50%, 
+# 75%, 100%) by default.
+quantile(weather$Mean.Humidity,na.rm=T)
 meanHumGr2 <- cut(weather$Mean.Humidity,
                   quantile(weather$Mean.Humidity,
                            na.rm=T))
 table(meanHumGr2)
+
 
 # but notice:
 sum(table(meanHumGr2))
@@ -430,18 +424,15 @@ meanHumGr3 <- cut(weather$Mean.Humidity,
 table(meanHumGr3)
 
 
-# Sometimes you'll see people use logical variables to create groups out of 
-# numeric variables. Recall that TRUE = 1 and FALSE = 0. Using that we can
-# create three groups as follows:
-1 + (weather$Mean.Humidity >= 70) + (weather$Mean.Humidity >= 90) 
-
-
 # We can also use ifelse() to cut numeric variables into groups. This is handy 
 # for creating indicator variables. For example, let's create a snow indicator
 # for the weather data:
 
 # if event one of three events, output 1, else output 0
 weather$snow <- ifelse(weather$Events %in% c("Fog-Rain-Snow","Snow","Rain-Snow"), 1,0)
+
+# %in% allows you to make multiple comparisons. 
+
 # how many days did it snow in 2013?
 sum(weather$snow) 
 # sanity check; did we capture all "snow" events?

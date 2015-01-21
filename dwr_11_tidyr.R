@@ -98,7 +98,8 @@ for(i in 1:4){
 # scatterplots by group
 library(ggplot2)
 ggplot(anscombeT, aes(x,y)) + geom_point() + 
-  geom_smooth(method="lm", se=F) + facet_wrap(~ group)
+  geom_smooth(method="lm", se=F) + facet_wrap(~ group) +
+  ggtitle("Anscombe's Quartet")
 
 
 # spread ------------------------------------------------------------------ 

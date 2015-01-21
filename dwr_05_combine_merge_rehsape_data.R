@@ -21,23 +21,29 @@ load("../data/datasets_L04.Rda")
 
 first <- data.frame(x0=1:5,
                     x1=rnorm(5),
-                    x2=sample(c("M","F"),5, replace=T))
+                    x2=c("M","F","M","F","F"))
 first
 second <- data.frame(x0=6:10,
                      x1=rnorm(5),
-                     x2=sample(c("M","F"),5, replace=T))
+                     x2=c("M","F","M","F","F"))
 second
-third <- data.frame(x4=rbinom(5,4,0.5),
-                    x5=sample(letters,5, replace=T))
+third <- data.frame(x4=c(3,3,1,3,2),
+                    x5=c("e","g","v","b","z"))
 third
 
 # We can use the rbind() function to stack data frames. Make sure the number of 
 # columns match. Also, the names and classes of values being joined must match.
-# Here we stack the first, the second and then third:
+# Here we stack the first, the second and then the first again:
 rbind(first, second, first)
+class(rbind(first, second, first)) # still a data frame
+
+# works with vectors too:
+rbind(1:3,4:6)
+class(rbind(1:3,4:6)) # matrix
 
 # Use the cbind function to combine data frames side-by-side:
-cbind(second,third)
+cbind(first,third)
+class(cbind(first,third))
 
 # WARNING: cbind does not require matching heights; if one data frame is shorter
 # it will recycle it. Notice below the third data frame is recycled.
@@ -52,13 +58,16 @@ names(allStocks)
 # call rbind repeatedly since there are so many data frames. 
 # rbind(allStocks$bbby.csv, allStocks$flws.csv, allStocks$foxa.csv,...)
 
-# A useful function for this type of task in R is the do.call() function. This
-# function allows you to call any R function, but instead of writing out the
-# arguments one by one, you can use a list to hold the arguments of the
-# function. Since allStocks is a list of data frames, and rbind takes data
-# frames as arguments, we can simply pass allStocks to rbind via the do.call
-# function.
-allStocks <- do.call("rbind", allStocks)
+# A useful function for this type of task in R is the do.call() function. This 
+# function allows you to call any R function, but instead of writing out the 
+# arguments one by one, you can use a list to hold the arguments of the 
+# function. The basic syntax is do.call(what, args), where "what" is a function 
+# and "args" are the arguments to pass to the function IN A LIST.
+
+# Since allStocks is a LIST of data frames, and rbind can take data frames as 
+# arguments, we can simply pass allStocks to rbind via the do.call function.
+allStocks <- do.call(rbind, allStocks)
+
 str(allStocks)
 # Let's go ahead and fix the Date column name:
 names(allStocks)[1] <- "Date"
@@ -129,8 +138,10 @@ few
 
 # Are there any values in y also in x?
 
-# First let's use match(). The basic syntax of match() is match(x, table) where
-# x is the values to be matched and table is the values to be matched against.
+# First let's use match(). The basic syntax of match() is match(x, table) where 
+# x is the values to be matched and table is the values to be matched against. 
+# So basically we asking the question: "do any values in 'few' match values in
+# 'alot'?
 match(few, alot)
 # this says the 3rd and 4th values of the "few" vector matches the 79th and 92nd
 # values of the "alot" vector.
@@ -138,13 +149,13 @@ match(few, alot)
 # The %in% operator is perhaps more intutive. It returns a logical vector.
 few %in% alot
 # This says the 3rd and 4th values of the "few" vector matches values of the 
-# "alot" vector. Notice it doesn't locate the match. How we can easily calculate
-# the number of matches.
+# "alot" vector. Notice it doesn't locate the match. 
+
+# Using %in% means we can easily count the number of matches:
 sum(few %in% alot)
 
-# intersect returns the matching values between two vectors:
+# intersect actually returns the matching values between two vectors:
 intersect(few,alot)
-
 
 
 # Reshaping Data ----------------------------------------------------------
@@ -155,16 +166,19 @@ intersect(few,alot)
 # observation in multiple rows, the data is said to be long.
 
 # Examples:
-wide <- data.frame(name=c("Clay","Garrett"),score1=c(78, 93), score2=c(87, 91))
+wide <- data.frame(name=c("Clay","Garrett","Addison"), 
+                   score1=c(78, 93, 90), 
+                   score2=c(87, 91, 97))
 wide
-long <- data.frame(name=c("Clay","Clay","Garrett","Garrett"),
-                   score=c(78, 87, 93, 91), test=c(1,1,2,2))
+long <- data.frame(name=rep(c("Clay","Garrett","Addison"),each=2),
+                   score=c(78, 87, 93, 91, 90, 97), 
+                   test=c(1,1,1,2,2,2))
 long
 
 # Many R functions require data in "long" format in order to perform 
-# calculations on the data. Therefore it's important to know how to reshape data
-# from wide to long. A very popular package for this task is the reshape2
-# package. If you don't already have it, please install it:
+# calculations on, or create graphs of, the data. Therefore it's important to
+# know how to reshape data from wide to long. A very popular package for this
+# task is the reshape2 package. If you don't already have it, please install it:
 # install.packages("rehsape2)
 library(reshape2)
 
@@ -201,7 +215,7 @@ aqLong2 <- reshape(airquality, idvar=c("Month","Day"), times=names(airquality)[1
 head(aqLong2)
 rm(aqLong2)
 
-# The dcast() function can reshape a long dataset to wide. Let's reshape the
+# The dcast() function can reshape a long data frame to wide. Let's reshape the 
 # airquality data back to its original wide format:
 aqOrig <- dcast(aqLong, Month + Day ~ Measurement, value.var = "Reading")
 head(aqOrig)
@@ -213,11 +227,14 @@ head(aqOrig)
 
 # We can also use the dcast function to calculate summaries such as means. For example,
 # we can find the mean measurement by month:
-dcast(aqLong, Month ~ Measurement, mean, na.rm=TRUE)
+dcast(aqLong, Month ~ Measurement, mean, na.rm=TRUE, 
+      value.var = "Reading")
+# Notice the result is a data frame
 
 # We can make our own function to count the number of missing measurements by
 # month:
-dcast(aqLong, Month ~ Measurement, function(x)sum(is.na(x)))
+dcast(aqLong, Month ~ Measurement, function(x)sum(is.na(x)), 
+      value.var = "Reading")
 
 # See the examples for help(cast) for more examples.
 
