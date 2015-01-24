@@ -7,7 +7,8 @@
 
 
 # load data from last lecture
-load("../data/datasets_L05.Rda")
+setwd("../data")
+load("datasets_L05.Rda")
 
 
 # Formatting Character Strings --------------------------------------------
@@ -22,6 +23,7 @@ load("../data/datasets_L05.Rda")
 popVa <- read.csv("PEP_2012_PEPANNRES_with_ann.csv",
                   stringsAsFactors=FALSE)
 head(popVa)
+tail(popVa)
 str(popVa)
 
 # I loaded this data set to show some examples of how R can manipulate character
@@ -42,8 +44,8 @@ nchar("data")
 popVa$GEO.id[1]
 nchar(popVa$GEO.id[1])
 popVa$GEO.display.label[1]
-# Notice that spaces are counted
 nchar(popVa$GEO.display.label[1])
+# Notice that spaces are counted
 
 # nchar is vectorized so it will work on entire vectors:
 nchar(popVa$GEO.display.label)
@@ -67,6 +69,8 @@ rm(x)
 x <- "Clay"
 y <- "Ford"
 paste(x,y)
+# use the sep argument to specify what, if anything, should be pasted between
+# the items. For example, to create "Ford, Clay"
 paste(y,x,sep=", ")
 
 # What about a vector of character strings? Below is a vector of three strings:
@@ -104,7 +108,7 @@ as.integer(substr(popVa$GEO.id2, 3, 7))
 # character vector in this case since we wouldn't use these numbers for
 # calculation.
 
-# We can also use substr() to replace substrings:
+# We can also use substr() <- to replace substrings:
 x <- "Megatron"
 substr(x,5,8) <- "zord"
 x
@@ -120,7 +124,7 @@ x
 
 strsplit("212-555-1212", split="-")
 
-# Notice strsplit returns a list object.
+# Notice strsplit returns a list object and discards the split character.
 
 # Let's split the contents of the GEO.display.label column by the comma and
 # store in temp.
@@ -141,6 +145,10 @@ head(popVa)
 
 # sub() - find and replaces first instance
 # gsub() - find and replaces all instances
+
+# The basic syntax is sub/gsub(pattern, replacement, x) where pattern is the 
+# pattern of characters to be matched, replacement is the replacement for the
+# matched pattern, and x is the character vector where matches are sought.
 
 text <- "I said no no no"
 sub("no","yes", text) # first instance
@@ -168,33 +176,35 @@ temp[1:5]
 
 # The dollar sign means "find at the end of the string". The pipe means "or". So
 # the expression is find " city, Virginia" or " town, Virginia" at the end of 
-# the string. We will delve into regular expressions in a future lecture. This 
+# the string. We will delve into regular expressions in the next lecture. This 
 # is a very simple example. Regular Expressions can get quite complicated and
 # indeed there are entire books devoted to regular expressions.
 
 
-# grep and grepl - Pattern Matching and Replacement
+# grep() and grepl() - Pattern Matching and Replacement
 
-# grep and grepl search for text or strings. grep() returns indices of matches
-# while grepl() returns a logical vector.
+# grep and grepl search for text or strings. grep() returns indices of matches 
+# while grepl() returns a logical vector. For example, here's how we can find
+# the indices of weather$Events that contain the phrase "Fog-Rain":
 grep("Fog-Rain",weather$Events)
 # Note: the argument invert=T will return the opposite: indices that do not
 # match the string.
 
-# The value=T will extract the vector elements containing the match
+# The argument value=T will extract the vector elements containing the match
 grep("Fog-Rain",weather$Events, value=T) 
 
-# grepl() returns a logical vector
+# grepl() returns a logical vector. TRUE if a match is found, FALSE otherwise.
 grepl("Fog-Rain",weather$Events)
 
 # Let's create city/town indicator in popVa data frame:
 popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label)==1,1,0)
+# Recall that TRUE/FALSE in R equals 1/0.
 
 # grep() and grepl() also have an ignore.case argument. When set to TRUE, case
 # is ignored so searching for "city" finds "City", "CITY", and "city". 
 
 # grep, grepl, sub and gsub become extremely powerful with regular expressions,
-# which we'll explore in a later lecture.
+# which we'll explore in the next lecture.
 
 # The stringr package
 
@@ -206,7 +216,7 @@ popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label)==1,1,0)
 library(stringr)
 
 # We will look deeper into stringr when we cover regular expressions, for now
-# here are two handy functions tide you over:
+# here are two handy functions to tide you over:
 
 # str_trim() - Trim whitespace from start and end of string.
 x <- c(" VA ", " MD ", " DE ")
@@ -221,7 +231,7 @@ str_trim(x)
 loc <- "Charlottesville, VA, 22901"
 str_sub(loc, end = 15)
 str_sub(loc, start = -5) # extract the last 5 characters
-str_sub(loc, end = -5) # extract the 5th from last character and everything before it
+str_sub(loc, end = -8) # extract the 8th from last character and everything before it
 
 
 
@@ -242,13 +252,14 @@ class(weather$EST)
 # object to be converted and format is the display format of the date stated in
 # strptime (stir-pee-time) symbols.
 
-# see help(strptime) for a list of symbols. It may seem daunting at first but 
-# it's not too bad once you get the hang of it. A date such as April 5, 1982 has
-# a strptime format of "%B %d, %Y". %B is full month name, %d is day of month as
-# a decimal number, and %Y is a four digit year. Let's do a quick example:
+# See help(strptime) for a list of symbols. No seriously, go look at it. It may
+# seem daunting at first but it's not too bad once you get the hang of it. A
+# date such as April 5, 1982 has a strptime format of "%B %d, %Y". %B is full
+# month name, %d is day of month as a decimal number, and %Y is a four digit
+# year. Let's do a quick example:
 
 # format April 5, 1982 as a date:
-x <- "April 5, 1982 "
+x <- "April 5, 1982"
 x
 class(x)
 # Now convert to Date class:
@@ -256,8 +267,9 @@ y <- as.Date(x, format="%B %d, %Y")
 y
 class(y)
 
-# Typically we'll do this for an entire column in a data frame. Let's convert
-# the EST column in weather:
+# Typically we do this for an entire column in a data frame. Let's convert the 
+# EST column in weather. Here we use %m for month as this is code for month as a
+# number.
 weather$Date <- as.Date(weather$EST, format="%m/%d/%Y")
 weather$Date[1:5]
 class(weather$Date)
@@ -271,18 +283,19 @@ months(weather$Date)[30:35]
 quarters(weather$Date)[85:95]
 
 # It also makes plotting values over time easy:
-plot(Max.TemperatureF ~ Date, data=weather, type="l")
+plot(Max.TemperatureF ~ Date, data=weather, type="l", 
+     main="Maximum Daily Temperature in Charlottesville over 2013")
 
 # Sometimes we desire to display dates in a certain format. We can do that with
 # the format() function as follows:
-today <- Sys.Date()
+today <- Sys.Date() # Sys.Date() returns today's date according to our computer
 today
 class(today)
 format(today, "%B %d, %Y")
 format(today, "%a %b %d")
 format(today, "%Y-%b-%d")
 format(today, "%m/%d/%y")
-format(today, "%A, %B%e, %Y")
+format(today, "%A, %B %e, %Y")
 
 # In each case above the date is displayed in a new format and converted to
 # character.
@@ -313,15 +326,6 @@ with(rdates, ISOdate(Year, Month, Day))
 as.Date(with(rdates, ISOdate(Year, Month, Day)))
 
 
-# Dates are represented as the number of days since 1970-01-01, with negative 
-# values for earlier dates. We can can get the number of days (aka, the Julian
-# date) using the julian() function.
-julian(Sys.Date())
-julian(as.Date("1970-01-01"))
-julian(as.Date("1776-07-04"))
-julian(Sys.Date()) - julian(as.Date("1776-07-04")) 
-
-
 # With dates formatted in Date class, we can calculate elapsed time:
 as.Date("2014-03-01") - as.Date("2013-03-01")
 
@@ -349,7 +353,7 @@ class(x)
 y <- as.POSIXlt(Sys.time())
 y
 class(y)
-# Use unclass to see the internal "list" structure:
+# Use unclass to see the internal "list" structure of a POXIXlt object:
 unclass(y)
 # notice we can extract specific elements using the names:
 y$mon
@@ -379,6 +383,7 @@ summary(as.numeric(diff(rainyDays$Date)))
 
 # At one point we went 16 days without precipitation. When did that happen?
 f <- which.max(diff(rainyDays$Date))
+f
 rainyDays[f,]
 rainyDays[f+1,]
  

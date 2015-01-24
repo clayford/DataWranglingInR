@@ -18,8 +18,10 @@ load("../data/datasets_L03.Rda")
 sort(allStocks$bbby.csv$Volume)[1:10]
 sort(allStocks$bbby.csv$Volume, decreasing = TRUE)[1:10]
 
-# Also note the difference:
+# Also note the difference...
+# sorts ENTIRE vector and then displays top 10 in ascending order:
 sort(allStocks$bbby.csv$Volume)[1:10]
+# subsets first 10 of vector and then sorts those 10 in ascending order:
 sort(allStocks$bbby.csv$Volume[1:10])
 
 
@@ -38,7 +40,7 @@ order(y)
 # create a data frame and sort on y then x; note the use of brackets
 df <- data.frame(x,y)
 df
-order(y,x)
+order(y,x) # how to order row numbers to sort data frame
 df[order(y,x),]
 
 # Sort the weather data on Max.TemperatureF and only show the first 6 rows and
@@ -221,8 +223,8 @@ levels(weather$Events)
 
 # For example:
 tmp <- read.csv("../data/cville_weather_2013.csv", stringsAsFactor=FALSE)
-str(tmp$Events)
-rm(tmp)
+str(tmp$Events) # not a factor
+rm(tmp) # remove tmp
 
 # We can also use the as.character() function to convert a factor to character:
 as.character(weather$Events)[1:10]
@@ -234,13 +236,12 @@ as.character(weather$Events)[1:10]
 # We need to be able to manipulate factors in the following ways:
 # - create factors
 # - change level names
-# - add levels
+# - add/remove levels
 # - reorder levels
 
 # To create factors use the factor() function; the optional labels argument 
-# allows you to define your own labels. Let's make Cloud.Cover.Index a factor
-# (ie, a nominal categorical variable). Calling summary on it shows us that it
-# is currently a numeric.
+# allows you to define your own labels. Let's make Cloud.Cover.Index a factor.
+# Calling summary on it shows us that it is currently a numeric.
 summary(weather$Cloud.Cover.Index)
 # Now make it a factor:
 weather$Cloud.Cover.Index <- factor(weather$Cloud.Cover.Index)
@@ -262,14 +263,15 @@ levels(weather$Cloud.Cover.Index)
 weather$Cloud.Cover.Index[1:10]
 
 
-# To change the names of factor levels, use the levels() function. Wikipedia 
-# tells us cloud coverage ranges is value from 0 - 9: 
+# To change the names of factor levels, use the levels() function with the 
+# assignment operator ( <- ). Notice it requires a list object. Wikipedia tells
+# us cloud coverage ranges is value from 0 - 9:
 # http://en.wikipedia.org/wiki/Okta. Let's include a level for 9 and change the
 # level names:
-levels(weather$Cloud.Cover.Index) <- list(missing=NA, skc="0",few1="1", few2="2",
-                                          sct3="3", sct4="4", bkn5="5", bkn6="6", bkn7="7",
-                                          ovc="8", obstructed="9")
-# notice there is no level 9
+levels(weather$Cloud.Cover.Index) <- c("missing", "skc","few1", "few2",
+                                          "sct3", "sct4", "bkn5", "bkn6", "bkn7",
+                                          "ovc", "obstructed")
+# notice there is no level 9, "obstructed"
 summary(weather$Cloud.Cover.Index)
 
 # We can drop unused factor levels using the droplevels() function:
@@ -277,6 +279,10 @@ weather$Cloud.Cover.Index <- droplevels(weather$Cloud.Cover.Index)
 summary(weather$Cloud.Cover.Index)
 levels(weather$Cloud.Cover.Index)
 weather$Cloud.Cover.Index[1:10]
+
+# droplevels() sometimes comes in handy after you have subsetted a data frame 
+# and you want to drop unused factor levels that were dropped due to the
+# subsetting.
 
 # Let's go ahead and add a level that says "None" for days with no weather Events
 levels(weather$Events)
@@ -295,6 +301,8 @@ gender
 
 # This has implications for statistical modelling. 
 
+# Converting factor to numeric --------------------------------------------
+
 # Remember the election data?
 str(electionData)
 # notice many columns of numbers are formatted as factors. For example, look at
@@ -311,6 +319,13 @@ levels(electionData$"Obama Democratic")
 # Democratic" to character, then numeric.
 as.numeric(as.character(electionData$"Obama Democratic"))
 
+# what happens if we just use as.numeric by itself?
+as.numeric(electionData$"Obama Democratic")
+# We just get the integer codes. Remember, factors are stored as integers with 
+# corresponding character labels! Hence the need to first convert to character, 
+# which replaces the integer codes with the character labels. Then we can
+# convert to numeric.
+
 electionData$"Obama Democratic" <- as.numeric(as.character(electionData$"Obama Democratic"))
 summary(electionData$"Obama Democratic") 
 
@@ -322,14 +337,13 @@ names(electionData)
 for(i in seq(12,70,by=2)){
   if(is.factor(electionData[,i])){
     electionData[,i] <- as.numeric(as.character(electionData[,i]))
+    print(i) # see which columns were changed
   }
 }
 
 # Notes:
 # seq(12,70,by=2) creates a sequence of numbers from 12 to 70 in steps of 2.
 # is.factor(electionData[,i]) returns TRUE if column i is a factor.
-
-# Converting factor to numeric --------------------------------------------
 
 
 # Look again at Precipitation in the weather data:
@@ -338,21 +352,18 @@ str(weather$PrecipitationIn)
 summary(weather$PrecipitationIn)
 # Look at the "T" at the end. The "T" means "trace amounts" of precipitation. R 
 # saw the character "T" and automatically treated the entire column as 
-# character, and hence a factor. One option is to leave as is and treat 
-# precipitation as a categorical variable. But what if we wanted to calculate 
-# the mean precipitation? This provides an opportunity to demonstrate how to
-# convert a factor to numeric which isn't as easy you might think.
+# character, and hence a factor, when we imported weather. One option is to
+# leave as is and treat precipitation as a categorical variable. But what if we
+# wanted to calculate the mean precipitation? 
 
-# A naive approach is to use the as.numeric() function. But it just returns the
-# integer codes of the factor. Plus in this case it converts "T" to 65.
-as.numeric(weather$PrecipitationIn) 
-
-# the correct way to proceed is to first convert the factor to character:
+# As we noted above, the correct way to proceed is to first convert the factor
+# to character:
 weather$PrecipitationIn <- as.character(weather$PrecipitationIn)
 
 # Now let's change the "T" (trace amounts) to 0.001. Notice we're dealing with a
 # character vector so we need to use quotes around values:
-weather$PrecipitationIn <- ifelse(weather$PrecipitationIn=="T","0.001",weather$PrecipitationIn)
+weather$PrecipitationIn <- ifelse(weather$PrecipitationIn=="T","0.001",
+                                  weather$PrecipitationIn)
 # NOW we can use as.numeric: 
 weather$PrecipitationIn <- as.numeric(weather$PrecipitationIn)
 summary(weather$PrecipitationIn)
@@ -366,8 +377,9 @@ summary(weather$PrecipitationIn)
 
 # DF$YEAR <- factor(DF$YEAR)
 
-# We can also use the cut() function to convert a numeric variable into a
-# factor. The basic syntax is cut(x, breaks) where x is numeric vector and
+# We can also use the cut() function to convert a numeric variable into a 
+# categories, and hence a factor. For example, splitting ages into age
+# categories. The basic syntax is cut(x, breaks) where x is numeric vector and
 # breaks is either a numeric vector of two or more unique cut points, or a
 # single number (greater than or equal to 2) giving the number of intervals into
 # which x is to be cut.
@@ -384,12 +396,12 @@ quantile(weather$Mean.Humidity,na.rm=T)
 meanHumGr2 <- cut(weather$Mean.Humidity,
                   quantile(weather$Mean.Humidity,
                            na.rm=T))
+# can use the table() function to tally membership in categories:
 table(meanHumGr2)
-
 
 # but notice:
 sum(table(meanHumGr2))
-# I guess we have two records with missing Mean.Humidity
+# I guess we have two records with missing Mean.Humidity...
 sum(is.na(weather$Mean.Humidity))
 # Apparently not. But what about our new factor variable:
 sum(is.na(meanHumGr2))
@@ -415,9 +427,10 @@ meanHumGr3 <- cut(weather$Mean.Humidity,
                   breaks=c(0,30,50,70,100))
 table(meanHumGr3)
 # Notice we specified 5 cut points for 4 groups. You have to specifiy the lowest
-# bound and the highest bound.
+# bound and the highest bound. Here we specify (0, 30], (30,50], (50,70], and
+# (70,100].
 
-# We can also specifiy labels we prefer using the labels argument.
+# We can specify labels we prefer using the labels argument.
 meanHumGr3 <- cut(weather$Mean.Humidity,
                   breaks=c(0,30,50,70,100),
                   labels=c("bone dry","dry","normal","humid"))
