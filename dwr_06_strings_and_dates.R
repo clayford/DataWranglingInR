@@ -64,12 +64,16 @@ rm(x)
 # tolower() and toupper() - convert upper-case characters in a character vector
 # to lower-case, or vice versa. Non-alphabetic characters are left unchanged. 
 
-# Useful when you read in a data with ALLCAP column names and want to convert to
-# lowercase.
+tolower("HEY GUYS")
+
+# I find tolower() useful when you've read in data with ALLCAP column names and
+# you want to convert to lowercase.
 
 df <- data.frame(ID=1:3, NAME=c("Bill","Ted","John"),AGE=c(23,21,20))
+df
 names(df) <- tolower(names(df))
 df
+rm(df)
 
 # paste() - Concatenate vectors after converting to character
 
