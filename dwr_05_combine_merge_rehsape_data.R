@@ -10,12 +10,12 @@
 load("../data/datasets_L04.Rda")
 
 
-
-# Combining Data Frames ---------------------------------------------------
-
 # Sometimes we have multiple data frames we want to combine. There are typically
-# three ways to do this: (1) place side-by-side, (2) stack on top of each other,
+# three ways to do this: (1) stack on top of each other, (2) place side-by-side,
 # or (3) merge together based on a common variable.
+
+
+# Stacking ----------------------------------------------------------------
 
 # Let's generate some fake data to illustrate combining data frames by stacking.
 
@@ -23,15 +23,13 @@ first <- data.frame(x0=1:5,
                     x1=rnorm(5),
                     x2=c("M","F","M","F","F"))
 first
-second <- data.frame(x0=6:10,
+second <- data.frame(x0=10:14,
                      x1=rnorm(5),
                      x2=c("M","F","M","F","F"))
 second
 third <- data.frame(x4=c(3,3,1,3,2),
                     x5=c("e","g","v","b","z"))
 third
-
-# rbind()
 
 # We can use the rbind() function to stack data frames. Make sure the number of 
 # columns match. Also, the names and classes of values being joined must match.
@@ -42,17 +40,6 @@ class(rbind(first, second, first)) # still a data frame
 # works with vectors too:
 rbind(1:3,4:6)
 class(rbind(1:3,4:6)) # matrix
-
-# cbind()
-
-# Use the cbind function to combine data frames side-by-side:
-cbind(first,third)
-class(cbind(first,third))
-
-# WARNING: cbind does not require matching heights; if one data frame is shorter
-# it will recycle it. Notice below the third data frame is recycled.
-cbind(rbind(first,second),third)
-
 
 # Remember the allStocks data? This is a list containing 7 data frames of stock
 # data for 7 different companies.
@@ -85,7 +72,18 @@ head(allStocks)
 # add a column called "company" that will list "BBBY", "FLWS", etc. for their
 # respective rows. We will do this in a later lecture.
 
-# Merging Data ------------------------------------------------------------
+# Side-by-side ------------------------------------------------------------
+
+# Use the cbind function to combine data frames side-by-side:
+cbind(first,third)
+class(cbind(first,third))
+
+# WARNING: cbind does not require matching heights; if one data frame is shorter
+# it will recycle it. Notice below the third data frame is recycled.
+cbind(rbind(first,second),third)
+
+
+# Merging -----------------------------------------------------------------
 
 # When we wish to join two data sets together based on common variables, we use 
 # the merge() function. For example, let's say we have a data set of crime 
@@ -106,48 +104,61 @@ head(allStocks)
 
 
 # Let's create some more fake data to illustrate:
-fourth <- data.frame(id=1:5,
-                     y2=rnorm(5,100,5))
-fourth
-fifth <- data.frame(id=rep(1:4,each=3),
-                    z2=sample(c("Y","N"),12, replace=TRUE))
-fifth
+left <- data.frame(id=c(2:7),
+                     y2=rnorm(6,100,5))
+left
+right <- data.frame(id=rep(1:4,each=2),
+                    z2=sample(c("Y","N"),8, replace=TRUE))
+right
 
-# Data frames fourth and fifth have columns "id" in common. Let's merge them 
+# Data frames left and right have columns "id" in common. Let's merge them 
 # together based on id:
-merge(fourth, fifth)
+merge(left, right)
 
-# Notice y2 from the fourth data frame is recycled to match up with multiple id
-# in the fifth data frame.
+# Notice y2 from the left data frame is recycled to match up with multiple id in
+# the right data frame. Also notice only rows with matching ids in both data
+# frames are retained. In database terminology this is known as an INNER JOIN.
+# Only those records with matching "by" variables are joined.
 
-# Let's say we want to merge the first and fourth data frames by x0 and y1. The
+# If we wanted to merge all rows regardless of match, we use the argument
+# all=TRUE. It is FALSE by default. This creates an OUTER JOIN.
+merge(left, right, all=TRUE)
+
+# If we want to retain everything in the left data frame and merge only what 
+# matches in the right data frame, we specify all.x=TRUE. This is known as a
+# LEFT JOIN.
+merge(left, right, all.x=TRUE)
+
+# If we want to retain everything in the right data frame and merge only what 
+# matches in the left data frame, we specify all.y=TRUE. This is known as a
+# RIGHT JOIN.
+merge(left, right, all.y=TRUE)
+
+# When merging two data frames that do not have matching column names, we can
+# use the by.x and by.y arguments to specify columns to merge on.
+
+# Let's say we want to merge the first and left data frames by x0 and y1. The
 # by.x and by.y arguments specify which columns to use for merging.
 first
-fourth
-merge(first, fourth, by.x="x0", by.y="id")
+left
+merge(first, left, by.x="x0", by.y="id")
 
-# Notice the merged data frame has an "x0" column, not an "id" column. 
+# Notice the merged data frame has an "x0" column, not an "id" column. And this
+# of course is an inner join.
 
-# Let's try to merge the second and fourth by x0 and id:
+# Let's try to merge the second and left by x0 and id:
 second
-fourth
-merge(second, fourth, by.x="x0", by.y="id") 
+left
+merge(second, left, by.x="x0", by.y="id") 
 
 # There are no matches, so no merging happens. What if we don't specify columns
 # to merge on?
-merge(second, fourth)
-# We get a cartesian product; every possible combination of rows.
+merge(second, left)
+# We get a "cartesian product"; every possible combination of rows.
 
 # Dimension of result:
-c(nrow(second)*nrow(fourth), ncol(second) + ncol(fourth))
+c(nrow(second)*nrow(left), ncol(second) + ncol(left))
 
-# Let's try merging the first and fifth data frames using the x0 and y1 columns.
-first
-fifth
-merge(first, fifth, by.x="x0", by.y="id")
-
-# Notice the x0 = 5 record from first is dropped. To keep it specify all=TRUE:
-merge(first, fifth, by.x="x0", by.y="id", all=T)
 
 # match(), intersect(), and %in% 
 
@@ -161,7 +172,7 @@ alot
 few <- round(runif(10,1,1000)) # 10 numbers from interval [1,1000]
 few
 
-# Are there any values in y also in x?
+# Are there any values in "few" also in "alot"?
 
 # First let's use match(). The basic syntax of match() is match(x, table) where 
 # x is the values to be matched and table is the values to be matched against. 
@@ -197,9 +208,13 @@ wide <- data.frame(name=c("Clay","Garrett","Addison"),
                    test3=c(88, 99, 91))
 wide
 long <- data.frame(name=rep(c("Clay","Garrett","Addison"),each=3),
-                   test=rep(1:3, each=3),
+                   test=rep(1:3, 3),
                    score=c(78, 87, 88, 93, 91, 99, 90, 97, 91))
 long
+
+##############
+# wide to long
+##############
 
 # Many R functions require data in "long" format in order to perform 
 # calculations on, or create graphs of, the data. Therefore it's important to
@@ -208,13 +223,13 @@ long
 # install.packages("rehsape2)
 library(reshape2)
 
-# The star function of the reshape2 package is melt. It basically "melts" wide 
+# The star function of the reshape2 package is melt(). It basically "melts" wide
 # data into long format. The basic syntax is melt(data, id.vars, measure.vars), 
 # where "data" is your data frame, "id.vars" are the ID variables (ie, variables
 # that will still have their own column after reshaping) and "measure.vars" are 
 # the variables that are getting "melted". Column headers of the "measure.vars" 
-# become a single variable in the melted data frame as does the values under
-# those column headers. This is best explained with an example. 
+# become a single variable in the melted data frame as does the values under 
+# those column headers. This is best explained with an example.
 
 # To make our "wide" data frame long
 melt(wide, id.vars = "name", measure.vars = c("test1","test2","test3"))
@@ -254,7 +269,9 @@ par(op)
 
 # or like this:
 library(ggplot2)
-ggplot(aqLong, aes(x=Day, y=Reading, color=Measurement)) + geom_line() +
+ggplot(aqLong, aes(x=Day, y=Reading, 
+                   color=Measurement)) + 
+  geom_line() +
   facet_wrap(~Month)
 
 
@@ -267,14 +284,15 @@ aqLong2 <- reshape(airquality, idvar=c("Month","Day"), times=names(airquality)[1
 head(aqLong2)
 rm(aqLong2)
 
-# Let's subset and reshape the election data to long format to facilitate a bar
-# graph:
+# Let's subset and reshape the election data to long format to facilitate a bar 
+# graph. 
 
-names(electionData)[1] <- "State"
+names(electionData)[1] <- "State"  
 edSub <- subset(electionData, select=c("State", "Obama Democratic", "Romney Republican", "Elec.Vote D"))
 edSub$Winner <- ifelse(is.na(edSub$"Elec.Vote D"),"Romney","Obama")
 edSub$"Elec.Vote D" <- NULL
-edSub <- melt(edSub, id.vars = c("State","Winner"), value.name="Votes", variable.name="Candidate")
+edSub <- melt(edSub, id.vars = c("State","Winner"), value.name="Votes",
+              variable.name="Candidate")
 head(edSub)
 
 library(scales) # for the comma function
@@ -282,6 +300,11 @@ ggplot(edSub, aes(x=State, y=Votes, group=Candidate, fill=Candidate)) +
   geom_bar(position="dodge", stat="identity") + facet_wrap(~Winner) +
   scale_fill_manual(values=c("blue","red")) + scale_y_continuous(labels=comma) +
   coord_flip()
+
+##############
+# long to wide
+##############
+
 
 # The dcast() function can reshape a long data frame to wide. First we'll 
 # demonstrate and then explain. Let's reshape our aqLong data frame back to its 

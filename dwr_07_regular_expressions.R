@@ -58,15 +58,15 @@ gregexpr("pancake",someText)
 # begins at position 11, and is 7 characters long. The second match is in the
 # 5th element of the vector, begins at position 48, and is 7 characters long.
 
-# regexpr() and gregexpr() are often used with regmatches(). regmatches allows
-# you to extract or replace matched substrings from match data obtained by
-# regexpr and gregexpr. For example, using regexr():
+# regexpr() and gregexpr() are often used with regmatches(). regmatches allows 
+# you to extract matched substrings from match data obtained by regexpr and
+# gregexpr. For example, using gregexpr():
 mdata <- gregexpr("pancake",someText)
 # extract the match
-regmatches(someText,mdata) 
-# replace the FIRST match
-regmatches(someText,mdata) <- "waffle" 
-someText[5]
+regmatches(someText,mdata)
+
+# little trick: use unlist() to convert list object to vector:
+unlist(regmatches(someText,mdata))
 
 
 # Regular Expression Basics -----------------------------------------------
@@ -107,17 +107,17 @@ someText[5]
 
 # find elements in vector beginning with 1 or more spaces
 grep("^ +", someText, value=T) 
-# find elements containing a question
+# find elements containing a question mark
 grep("\\?", someText, value=T) 
-# find elements ending with a question
+# find elements ending with a question mark
 grep("\\?$", someText, value=T) 
 # find elements containing one or more numbers
 grep("[0-9]+", someText, value=T) 
 # find elements containing numbers with 2 digits
 grep("[0-9]{2}", someText, value=T)
-# file names ending with .jpg
+# text ending with .jpg
 grep("\\.jpg$", someText, value=T) 
-# file names with only letters ending in .jpg
+# test beginning with only letters, and containing only letters, ending in .jpg
 grep("^[a-zA-Z]+\\.jpg", someText, value=T)
 # text containing two consecutive "really "
 grep("(really ){2}",someText, value=T) 
@@ -143,7 +143,8 @@ gsub("<[^>]*>","",someText)
 
 # Regular Expressions can be very helpful when doing web scraping. Let's scrape 
 # some data and demonstrate. Simply give a URL as an argument to the readLines()
-# function. This will read in the HTML code of the web page into a single vector.
+# function. The readLines() function reads in text lines. The following reads in
+# the HTML code of a web page into a single vector.
 
 # 113th Congress Senate Bills: first 100 results.
 senate_bills <- readLines("http://thomas.loc.gov/cgi-bin/bdquery/d?d113:0:./list/bss/d113SN.lst:")
@@ -173,6 +174,8 @@ head(temp)
 # To get the bill numbers we can pull out the first element of each list
 # component as follows:
 bill <- sapply(temp,function(x)x[1])
+head(bill)
+
 # we can define a regular expression as a variable and use that regexpr(). This
 # regular expression finds the letter S followed by 1-3 numbers:
 pattern <- "S.[0-9]{1,3}"
@@ -207,7 +210,8 @@ temp <- strsplit(temp,"Cosponsors")
 head(temp)
 # Number of cosponsors in second element
 cosponsors <- sapply(temp,function(x)x[2])
-# replace "<....(" with nothing
+head(cosponsors)
+# replace "</a> (" with nothing
 cosponsors <- gsub("<.*\\(","",cosponsors)
 # replace ")" with nothing
 cosponsors <- gsub("\\)","",cosponsors) 
@@ -221,7 +225,7 @@ senate_bills <- data.frame(bill, title, sponsor, cosponsors)
 head(senate_bills)
 
 # Recall our allStocks data. We wanted to add a column indicating which stock 
-# each row belongs to. We can use strsplit() and regular expressions to easily
+# each row belongs to. We can use gsub() and regular expressions to easily
 # do this.
 head(allStocks)
 
@@ -239,26 +243,27 @@ head(allStocks)
 rownames(allStocks) <- NULL
 head(allStocks)
 
-# Now we can use strsplit to split the Stock vector at the period. The period is
-# a modifier in regular expressions, so we need to escape with a backslash,
-# which itself needs to be escaped!
-tmp <- strsplit(allStocks$Stock, split = "\\.")
-tmp[[1]]
+# Now we find the pattern "\\.csv\\.[0-9]{1,3}" and replace with nothing. Recall
+# that "." is metacharacter that has to be escaped. [0-9]{1,3} translates to all
+# numbers ranging from 0 - 999.
+allStocks$Stock <- gsub(pattern = "\\.csv\\.[0-9]{1,3}", 
+                        replacement = "", 
+                        allStocks$Stock)
 
-# Extract the first element and add to the allStocks data frame:
-tmp <- sapply(tmp, function(x)x[1])
-tmp[1:3]
-allStocks$Stock <- factor(tmp)
+# and let's make our new variable a factor:
+allStocks$Stock <- factor(allStocks$Stock)
 head(allStocks)
 tail(allStocks)
 
-# While we're at it, let's fix the Date:
-class(allStocks$Date)
-
-# Currently a factor. It should be a date.
+# While we're at it, let's fix the Date. (Currently a factor.)
 allStocks$Date <- as.Date(allStocks$Date, format="%d-%b-%y")
 
-# Now let's finish cleaning up the 2012 election data
+# And just for fun, graph closing price over time for all stocks one on graph:
+library(ggplot2)
+ggplot(allStocks, aes(x=Date, y = Close, color=Stock)) + geom_line()
+
+
+# Now let's finish cleaning up the 2012 election data!
 names(electionData)
 # I want to drop everything to the right of the "NA..34 NA" column. Frankly I'm
 # not sure what those columns contain.
@@ -276,20 +281,14 @@ ind
 electionData <- electionData[,-ind]
 
 # and some final clean up
-names(electionData)[1] <- "State"
 names(electionData)[3] <- "Total.Popular.Vote" 
 names(electionData)[5] <- "Elec.Vote R" 
 electionData$"Pop.Vote D" <- NULL
 
 # Now our election data contains only number of votes. 
 
-# Here's a quick way to create a city indicator in our popVa data set. Recall 
-# some places are called "town" and others "city". Let's create an indicator
-# that takes the value 1 if the place is a city and 0 otherwise.
-popVa$city.ind <- ifelse(grepl(pattern = "city",popVa$GEO.display.label),1,0)
 
-
-# stringr, qdapRegex and stringi packages
+# stringr and qdapRegex packages ------------------------------------------
 
 # The stringr package can also use regular expressions. In fact that's pretty
 # much the idea.

@@ -38,37 +38,29 @@ class(tab)
 summary(tab)
 
 # The table() documentation in R has pretty good examples. Let's look at some of
-# them.
+# them. I encourage you to occassionally work through the examples provided with
+# R documentation. They will often expose you to functions or methods of data 
+# manipulation that you were not aware of.
 
 ## Simple frequency distribution 
 
-# rpois(100, 5) generates 100 random values from a Poisson distribution with
-# lambda=5. Values from a Poisson distribution are integers. We often use a
-# Poisson distribition to model counts, such as number of 911 calls per day.
+# rpois(100, 5) generates 100 random values from a Poisson distribution with 
+# lambda=5. Values from a Poisson distribution are integers. We often use a 
+# Poisson distribition to model counts, such as number of 911 calls per hour. 
+# The takeaway from this example is that table will coerce vectors of numbers
+# into factors and calculate a frequency distribution.
 table(rpois(100, 5))
-
-## Check the design:
-
-# warpbreaks is data set that comes with R. It gives The Number of Breaks in
-# Yarn during Weaving. There are two factors: wool and tension. Calling table()
-# on wool and tension tells how many observations we have for each combination
-# of the two factors. Hence the section header, ""Check the Design"
-with(warpbreaks, table(wool, tension))
-# It's balanced; equal number of observations at each combination of factor
-# levels.
-
-# state.division and state.region are two vectors of class "factor" that come 
-# with R and part of the US State Facts and Figures dataset. State divisions are
-# subsets of state regions. We can check that with table()
-table(state.division, state.region)
-# Checks out: No division appears in more than one region.
+# And this is handy for plotting
+plot(table(rpois(100, 5)), type="h")
+barplot(table(rpois(100, 5)))
 
 ## simple two-way contingency table
 
 # To create the following two-way contingency table we first "cut" a continuous 
-# measure (Temperature) into categories. Each measure of Temperature is
-# classified according to our definition of cut. Below we create 4 categories
-# based on quantiles (0%, 25%, 50%, 75%, 100%)
+# measure (Temperature) into categories. Each measure of Temperature is 
+# classified according to our definition of cut. Below we create 4 categories 
+# based on quantiles (0%, 25%, 50%, 75%, 100%) and then create a contingency
+# table with Month.
 with(airquality, table(cut(Temp, quantile(Temp)), Month))
 
 ## xtabs() <-> as.data.frame.table():
@@ -89,99 +81,36 @@ class(UCBAdmissions)
 as.data.frame(UCBAdmissions)
 # Now let's save the data frame and give it to xtabs()
 DF <- as.data.frame(UCBAdmissions)
-xtabs(Freq ~ ., DF)
+head(DF)
+xtabs(Freq ~ ., DF) # reverses the effect of as.data.frame()
 
 # The xtabs() function allows a formula interface where counts are provided on 
-# the left of the "~" and factors on the right. The . means use all factors in
-# the data frame, but we can speciy specific factors:
+# the left of the "~" and factors on the right. The . means use all factors in 
+# the data frame, but we can speciy specific factors. For example for a two-way
+# table of admissions amd and gender over all departments:
 xtabs(Freq ~ Admit + Gender, DF)
 
 # We'll return to xtabs() in a moment.
 
-# This example shows you how table() can handle NA and Inf values. (Note: 1/0 =
-# Inf). First we take the sequence NA, Inf, 1, 1/2, 1/3 and repeat it 10 times. 
-a <- rep(c(NA, 1/0:3), 10) 
-a
-# Now tally the number of each value, which should be 10
-table(a)
+## Including/Excluding levels
 
-# Notice NA was not included. To include it, set exclude = NULL.
-table(a, exclude = NULL)
+# table() does not count NA by default:
+table(arrests$Children)
 
-# we can also use exclude to exclude certain factor levels. For example:
-b <- factor(rep(c("A","B","C"), 10))
-table(b)
-table(b, exclude = "B")
+# To include NA, you can set the exclude argument to NULL:
+table(arrests$Children, exclude = NULL)
 
-# Here we generate a factor with 5 levels but with only 3 levels taking values:
-d <- factor(rep(c("A","B","C"), 10), levels = c("A","B","C","D","E"))
-d # no values of D or E
+# You can also use the useNA argument, which takes three values: "no", "ifany",
+# or "always". The default is "no":
+table(arrests$Children, useNA = "no")
+table(arrests$Children, useNA = "ifany")
 
-# we now build a table to tally values of d and exclude the level "B". 
-table(d, exclude = "B")
-# Notice levels D and E are in the table even though there are no occurrences of
-# either.
+# show tally of NA even if there is none:
+table(arrests$Children, useNA = "always")
 
-# In this example we cross-classify b and d and use the zero.print argument to
-# print "." instead of zeros
-print(table(b, d), zero.print = ".")
-
-## NA counting:
-
-# The last two sections deal with counting NAs. First we take our vector d and
-# add two NA values in the 3rd and 4th positions
-is.na(d) <- 3:4
-d
-# Next we create a new vector called "d." The addNA() function modifies a factor
-# by turning NA into an extra level
-d. <- addNA(d)
-d.[1:7]
-table(d.) 
-# Notice exclude = NULL is not needed since NA is a factor level.
-
-# If we want to count the NA's of 'd', use exclude = NULL
-table(d)
-table(d, exclude = NULL)
-
-# There is also a useNA argument that can take three values: "no", "ifany", or
-# "always". The default is "no"
-table(d)
-table(d, useNA = "no")
-table(d, useNA = "ifany")
-table(b, useNA = "always") # show tally of NA even if there is none
-
-## Two-way tables with NA counts. The 3rd variant is absurd, but shows
-## something that cannot be done using exclude or useNA.
-
-# The final section demonstrate two-way counts with NA values. First it creates 
-# a logical vector of whether or not airquality$Ozone > 80. We can first tally
-# the number of TRUE and FALSE.
-table(airquality$Ozone > 80)
-# any NAs?
-table(airquality$Ozone > 80, useNA = "ifany") # yep, 37
-
-# Let's create a two-way contingency table of this logical vector with Month:
-with(airquality,
-     table(OzHi = Ozone > 80, Month, useNA = "ifany"))
-# No NA for Month, but NA for logical vector. 
-
-# if we set useNA = "always", we'll get NA for both factors:
-with(airquality,
-     table(OzHi = Ozone > 80, Month, useNA = "always"))
-
-# The documentation says this example is absurd. How so? Well, they leave useNA 
-# set to its default "no", which means the NAs in the logical will not be 
-# tallied. But then they use the addNA() function to add NA as a level to Month.
-# That means NA becomes a factor level of month whether or not NAs are present, 
-# and hence it gets included in the Month dimension of the table. I suppose this
-# is "absurd" since Month is never missing.
-with(airquality,
-     table(OzHi = Ozone > 80, addNA(Month)))
-
-# I encourage you to occassionally work through the examples provided with R 
-# documentation. They will often expose you to functions or methods of data 
-# manipulation that you were not aware of.
-
+# We can also exclude certain factor levels. For example, let's exclude anyone
+# who had more than 7 children:
+table(arrests$Children, exclude = 7:23)
 
 # We mentioned xtabs() as another way to create contigency tables. I find 
 # table() a little more intuitive to use, but xtabs() is nice because it has the
@@ -191,7 +120,7 @@ xtabs( ~ Events + Cloud.Cover.Index, data=weather)
 
 # Notice there is nothing on the left of the "~". We do that when creating a 
 # table of factors in a data frame for which there is no column of counts. That 
-# tends to be how most data is formatted, and thus this seems to be the way
+# tends to be how most data are formatted, and thus this seems to be the way
 # xtabs() is most often used.
 
 # A nice feature of the formula interface is the presence of the subset
@@ -201,7 +130,7 @@ xtabs( ~ Events + Cloud.Cover.Index, data=weather,
        exclude=c("None","missing"))
 
 # The prop.table() function creates tables with proportions instead of counts. 
-# The basic syntax is prop.table(x,margin) where x is a table and margin is the 
+# The basic syntax is prop.table(x, margin) where x is a table and margin is the 
 # index (or indices) to generate marginal proportions. Let's go back to the
 # UCBAdmissions data. Recall it was a 3-way table. We can access parts of the
 # table using subsetting brackets. Notice it's a 2 x 2 x 6 table.
@@ -218,26 +147,26 @@ prop.table(deptA, margin = 2) # columns sum to 1
 # Let's see how prop.table works on a three-way table
 (deptAB <- UCBAdmissions[,,1:2])
 
-# Below all 2x4=8 cells sum to 1
+# all 2x4=8 cells sum to 1
 prop.table(deptAB) 
 
-# Below all 4 row entries for each level of Admit sum to 1
+# all 4 row entries for each level of Admit sum to 1
 prop.table(deptAB, margin = 1) 
-# For Admit:
+# For Admitted:
 0.5272915 + 0.09165808 + 0.3635427 + 0.01750772
 
-# Below all 4 column entries for each level of Gender sum to 1
+# all 4 column entries for each level of Gender sum to 1
 prop.table(deptAB, margin = 2) 
 # For Male
 0.3696751 + 0.2259928 + 0.2548736 + 0.1494585
 
-# Below all entries in each 2x2 table sum to 1
+# all entries in each 2x2 table sum to 1
 prop.table(deptAB, margin = 3) 
 
-# Below rows within each 2x2 table sum to 1
+# rows within each 2x2 table sum to 1
 prop.table(deptAB, margin = c(1,3)) 
 
-# Below columns within each 2x2 table sum to 1
+# columns within each 2x2 table sum to 1
 prop.table(deptAB, margin = c(2,3)) 
 
 # The addmargins() function does what you probably guess it does: it adds table
@@ -251,12 +180,24 @@ addmargins(deptAB)
 # specify which dimension is summed.
 addmargins(deptA, margin = 1)
 
-# Finally the ftable() function flattens tables to make them a little easier to read: 
+# Finally the ftable() function flattens tables to make them a little easier to
+# read:
 ftable(UCBAdmissions)
 # You can use the row.vars and col.vars arguments to change what is displayed in
 # the rows and columns:
-ftable(UCBAdmissions, row.vars=3)
+ftable(UCBAdmissions, row.vars=3) # 3rd dimension as row variable
 ftable(UCBAdmissions, col.vars=c("Admit","Dept"))
+
+# The gmodels package has a nice function for creating tables called CrossTable
+# that outputs something similar to what you might see in SAS or SPSS.
+
+# install.packages("gmodels")
+library(gmodels)
+CrossTable(UCBAdmissions[,,1])
+CrossTable(UCBAdmissions[,,1], format="SPSS")
+
+CrossTable(arrests$Sex)
+
 
 # Continuous data ---------------------------------------------------------
 
@@ -266,8 +207,8 @@ ftable(UCBAdmissions, col.vars=c("Admit","Dept"))
 # data frame or vector.
 
 # The bread and butter aggregation function in base R is aggregate(). It works 
-# with a formula interface. It can work with a formular interface and will
-# return a data frame. Let's see some examples using our weather data:
+# with a formula interface and will return a data frame. Let's see some examples
+# using our weather data:
 
 # Find the mean minimum temperature per Event
 aggregate(Min.TemperatureF ~ Events, data=weather, mean)
@@ -279,8 +220,11 @@ aggregate(Max.TemperatureF ~ Events, data=weather, median)
 aggregate(cbind(Min.TemperatureF,Max.TemperatureF) ~ Events, data=weather, mean)
 
 # With the formula interface we can specify multiple factors. Let's use the 
-# mtcars data to demonstrate. Here we calculate mean mpg for each combination of
-# number of gears and transmission  (0 = automatic, 1 = manual)
+# mtcars data to demonstrate. (1974 Motor Trend US magazine data)
+head(mtcars)
+
+# Here we calculate mean mpg for each combination of number of gears and
+# transmission  (0 = automatic, 1 = manual)
 aggregate(mpg ~ gear + am, data=mtcars, mean)
 
 # We can also specifiy multiple responses:
@@ -301,16 +245,22 @@ chickSE <- aggregate(weight ~ feed, data=chickwts, function(x)sd(x)/sqrt(length(
 chicks <- data.frame(feed=chickM$feed, mean=chickM$weight, SE=chickSE$weight)
 chicks
 # plot means and SE bars
-stripchart(mean ~ feed, data=chicks, pch=19, vertical = T, ylim=c(100,400), las=1)
-segments(x0 = 1:6, y0 = chicks$mean+chicks$SE,x1 = 1:6, y1 = chicks$mean-chicks$SE)
+stripchart(weight ~ feed, data=chickwts, pch=1, vertical = T, ylim=c(100,400), las=1,
+           col="grey60")
+points(1:6,chicks$mean, pch=19, col="red")
+# add standard error bars:
+segments(x0 = 1:6, y0 = chicks$mean+(2*chicks$SE),
+         x1 = 1:6, y1 = chicks$mean-(2*chicks$SE), 
+         col="red")
 
-# Another function useful for aggregating continuous data is tapply(). The R 
-# documentation describes tapply as a function that allows you to "Apply a 
-# function to each cell of a ragged array, that is to each (non-empty) group of 
-# values given by a unique combination of the levels of certain factors." What 
-# does that mean?! Basically it means you can aggregate groups of different
-# sizes, just as you can with aggregate. The main differences are there is no
-# formula interface and it does not return a data frame.
+# Another function useful for aggregating continuous data is tapply(), which we
+# discussed in a previous lecture. The R documentation describes tapply as a
+# function that allows you to "Apply a function to each cell of a ragged array,
+# that is to each (non-empty) group of values given by a unique combination of
+# the levels of certain factors." What does that mean? Basically it means you
+# can aggregate groups of different sizes, just as you can with aggregate. The
+# main differences are there is no formula interface and it does not return a
+# data frame.
 
 # The basic syntax is tapply(X, INDEX, FUN), where X is a vector of values, 
 # INDEX is a vector(s) of group labels for X, and FUN is a function. Going to
@@ -336,4 +286,86 @@ with(mtcars, tapply(mpg, list(gear, am), mean))
 # aggregate() which returned a data frame only containing rows for those
 # combinations with values of mpg.
 
+# The doBy package has a nice function for group summaries called summaryBy. It
+# works like aggregate() except you can specify more than one function. 
 
+# install.packages("doBy")
+library(doBy)
+summaryBy(Min.TemperatureF ~ Events, data=weather, FUN=c(mean,var,length))
+summaryBy(Min.TemperatureF + Max.TemperatureF ~ Events, 
+          data=weather, FUN=c(mean,var,length))
+
+# The summaryBy() function, and indeed the entire doBy package, does much more.
+# Read the vignette.
+
+# Using TRUE/FALSE --------------------------------------------------------
+
+# TRUE/FALSE conditional vectors can be quite powerful for aggregation. Since 
+# they equal 1/0, we can sum them up for counts and take their mean to find
+# proportions.
+
+# number of people arrested in Parisian insurrection under the age of 25:
+sum(arrests$Age < 25, na.rm = T)
+
+# proportion of people arrested in Parisian insurrection under the age of 25:
+mean(arrests$Age < 25, na.rm = T)
+
+# number of days hotter than 90 degress in 2013
+sum(weather$Max.TemperatureF > 90)
+
+# two-way table of Temp > 90 and Humidity > 90
+table(weather$Max.TemperatureF > 90, weather$Max.Humidity > 90)
+
+
+# sweep() -----------------------------------------------------------------
+
+# The sweep() function allows you to process matrix rows or columns differently 
+# based on values in an auxiliary vector. One example is calculating proportions
+# in a tables.
+
+# sweep() takes 4 arguments: a matrix, the matrix margin, an auxiliary martix
+# and a function.
+
+# calculating row proportions in a table:
+# first create the matrix:
+(tab <- with(arrests, table(MaritalStatus, Sex)))
+# create an auxiliary vector of column totals:
+cs <- colSums(tab)
+# Then sweep. In other words, divide each value in each column of the tab matrix
+# by the value in the cs vector:
+sweep(tab, 2, cs, "/") 
+
+# Of course, prop.table() does the same things:
+prop.table(tab,margin = 2)
+# In fact, the help page for prop.table says "This is really sweep(x, margin,
+# margin.table(x, margin), "/") for newbies"
+rm(tab,cs)
+
+# centering variables: first select only those columns from weather that are of
+# class integer and not just 0,1:
+temp <- weather[,sapply(weather,class)=="integer" & 
+                  lapply(lapply(weather, unique), length)!= 2]
+# calculate means of each column
+cm <- colMeans(temp, na.rm = TRUE)
+# Then sweep. In other words, substract from each value in each column of the
+# temp matrix the corresponding value in the cm vector.
+centered <- sweep(temp,2,cm,"-")
+head(centered[,1:3])
+
+# Of course this does the same thing:
+centered2 <- scale(temp,scale = FALSE, center = TRUE)
+head(centered2[,1:3])
+
+
+# mapply() ----------------------------------------------------------------
+
+# mapply is a multivariate version of sapply. The basic syntax is mapply(FUN, 
+# ...) where FUN is a function and ... are arguments. This is best explained
+# with a demonstration.
+
+# Let's say we want to calculate the mean value for each variable in our temp 
+# matrix using only those values that are greater than the median. First we
+# write a function:
+meanmed <- function(v,m) mean(v[v >= m], na.rm=TRUE)
+meds <- apply(temp,2,median, na.rm=TRUE)
+mapply(meanmed, temp, meds)

@@ -61,20 +61,30 @@ nchar(x)
 nchar(x[!is.na(x)])
 rm(x)
 
+# tolower() and toupper() - convert upper-case characters in a character vector
+# to lower-case, or vice versa. Non-alphabetic characters are left unchanged. 
+
+# Useful when you read in a data with ALLCAP column names and want to convert to
+# lowercase.
+
+df <- data.frame(ID=1:3, NAME=c("Bill","Ted","John"),AGE=c(23,21,20))
+names(df) <- tolower(names(df))
+df
+
 # paste() - Concatenate vectors after converting to character
 
 # paste converts its arguments to character strings, and concatenates them
 # (separating them by the string given by the sep argument)
 
-x <- "Clay"
-y <- "Ford"
+x <- "Irwin"
+y <- "Fletcher"
 paste(x,y)
 # use the sep argument to specify what, if anything, should be pasted between
-# the items. For example, to create "Ford, Clay"
+# the items. For example, to create "Fletcher, Irwin"
 paste(y,x,sep=", ")
 
 # What about a vector of character strings? Below is a vector of three strings:
-(z <- c("Joe","Clayton","Ford"))
+(z <- c("Irwin","M.","Fletcher"))
 # How can I paste the elements together to form one string? Use the collapse
 # argument (the sep argument has no effect when applied to a single vector):
 paste(z, collapse = " ")
@@ -83,9 +93,9 @@ paste(z, collapse = " ")
 # dataset that comes with R:
 head(airquality)
 
-# Let's say we want to paste the Month and Day together to form a new variable
-# called Date. Here's how we do it:
-airquality$Date <- paste(airquality$Month, airquality$Day, sep="/")
+# Let's say we want to paste the Month and Day together along with 1973 to form
+# a new variable called Date. Here's how we do it:
+airquality$Date <- paste(airquality$Month, airquality$Day, "1973", sep="/")
 head(airquality)
 
 
@@ -93,6 +103,7 @@ head(airquality)
 
 # basic syntax: substr(x, start, stop) where x is a character vector and
 # start/stop are integers representing the fist and last elements.
+substr("Fletcher", 1, 6)
 substr("virginia", 4, 6)
 substr(c("214-555-1234","434-888-7777"), 5, 12)
 
@@ -128,6 +139,7 @@ strsplit("212-555-1212", split="-")
 
 # Let's split the contents of the GEO.display.label column by the comma and
 # store in temp.
+head(popVa$GEO.display.label)
 temp <- strsplit(popVa$GEO.display.label,",")
 temp[1:3]
 # Notice we split each string by comma into two strings and the splitting
@@ -197,8 +209,8 @@ grep("Fog-Rain",weather$Events, value=T)
 grepl("Fog-Rain",weather$Events)
 
 # Let's create city/town indicator in popVa data frame:
-popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label)==1,1,0)
-# Recall that TRUE/FALSE in R equals 1/0.
+popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label),1,0)
+
 
 # grep() and grepl() also have an ignore.case argument. When set to TRUE, case
 # is ignored so searching for "city" finds "City", "CITY", and "city". 
@@ -229,7 +241,7 @@ str_trim(x)
 # backward and to specify only the end position
 
 loc <- "Charlottesville, VA, 22901"
-str_sub(loc, end = 15)
+str_sub(loc, end = 15) # extract everything through position 15
 str_sub(loc, start = -5) # extract the last 5 characters
 str_sub(loc, end = -8) # extract the 8th from last character and everything before it
 
@@ -244,8 +256,9 @@ class(weather$EST)
 
 # It is currently stored as a factor because each date contains slashes, which 
 # meant R interpreted the column as character and consequently converted to 
-# factor upon import. It would be better to format this column as a date class
-# so we could do things like calculate the elapsed number of days between "snow".
+# factor upon import. It would be better to format this column as a date class 
+# so we could do things like calculate the elapsed number of days between "snow"
+# or plot change in Temperature over time.
 
 # When dealing with dates that contain only month, day and/or year, we can use 
 # the as.Date() function. The basic syntax is as.Date(x, format) where x is the 
@@ -268,8 +281,8 @@ y
 class(y)
 
 # Typically we do this for an entire column in a data frame. Let's convert the 
-# EST column in weather. Here we use %m for month as this is code for month as a
-# number.
+# EST column in weather. The format is %m/%d/%Y (for example, 1/1/2013)
+
 weather$Date <- as.Date(weather$EST, format="%m/%d/%Y")
 weather$Date[1:5]
 class(weather$Date)
@@ -286,11 +299,12 @@ quarters(weather$Date)[85:95]
 plot(Max.TemperatureF ~ Date, data=weather, type="l", 
      main="Maximum Daily Temperature in Charlottesville over 2013")
 
-# Sometimes we desire to display dates in a certain format. We can do that with
-# the format() function as follows:
+# Once we have data stored as date class, we often want to display dates in a 
+# certain format. We can do that with the format() function as follows:
 today <- Sys.Date() # Sys.Date() returns today's date according to our computer
 today
 class(today)
+# Use the format() function with strptime codes to format the display of the date:
 format(today, "%B %d, %Y")
 format(today, "%a %b %d")
 format(today, "%Y-%b-%d")
@@ -339,7 +353,7 @@ difftime(as.Date("2014-03-01"), as.Date("2013-03-01"),
          units="weeks")
 (x <- difftime(as.Date("2014-03-01"), as.Date("2013-03-01"),
                units="weeks"))
-# convert to numeric:
+# convert to numeric to get rid of the words:
 as.numeric(x)
 
 # Let's explain POSIX a bit more. There are two classes in R: POSIXct and
@@ -356,7 +370,7 @@ class(y)
 # Use unclass to see the internal "list" structure of a POXIXlt object:
 unclass(y)
 # notice we can extract specific elements using the names:
-y$mon
+y$mon # 0 = January
 y$mday
 y$sec
 # see ?DateTimeClasses for a list of elements in POSIXlt. Unless you really need
@@ -366,7 +380,7 @@ y$sec
 # Back to difftime(). We can use it with a POSIX formatted date to easily
 # calculate elapsed time in hours, minutes, or seconds.
 x <- as.POSIXct("1973-04-05 15:30:00") # born
-y <- as.POSIXct("2013-04-05 15:30:00") # turning 40!
+y <- as.POSIXct("2013-04-05 15:30:00") # turning 40.
 difftime(y,x, units = "hours")
 difftime(y,x, units = "mins")
 difftime(y,x, units = "secs")
@@ -376,6 +390,7 @@ difftime(y,x, units = "secs")
 # only days with significant precipitation (ie, greater than the trace amount of
 # 0.001)
 rainyDays <- subset(weather, PrecipitationIn > 0.001, select = Date)
+head(rainyDays)
 # Now use the diff() function on the vector of dates:
 diff(rainyDays$Date)
 # To summarize this information we need to convert it to numeric:
@@ -384,8 +399,8 @@ summary(as.numeric(diff(rainyDays$Date)))
 # At one point we went 16 days without precipitation. When did that happen?
 f <- which.max(diff(rainyDays$Date))
 f
-rainyDays[f,]
-rainyDays[f+1,]
+rainyDays[f,] # start date
+rainyDays[f+1,] # end date
  
 # Generating time sequences
 
