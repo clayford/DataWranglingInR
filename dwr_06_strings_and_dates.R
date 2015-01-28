@@ -158,6 +158,10 @@ temp[[1]][1] # the first element of the vector in the first list element
 # out the first vector element from each list element, like so.
 popVa$city <- sapply(temp, function(x)x[1]) # apply to each list element
 head(popVa)
+# sometimes you'll see people do something like this, because `[` is itself a
+# function:
+# sapply(temp, function(x)`[`(x,1))
+
 
 # sub() - find and replaces first instance
 # gsub() - find and replaces all instances
@@ -182,9 +186,9 @@ popVa$city <- gsub(" town","",popVa$city)
 # And have a look:
 popVa$city[1:5]
 
-# I should point out the previous two lines of code could have been carried with
-# one line using a "regular expression". Regular expressions are a method of 
-# expressing patterns in character values. For example I could have submitted
+# I should point out the creation of the city column could have been carried out
+# with one line using a "regular expression". Regular expressions are a method 
+# of expressing patterns in character values. For example I could have submitted
 # the following single line of code to extract the city/town names:
 
 temp <- gsub(" city, Virginia$| town, Virginia$", "", popVa$GEO.display.label)
@@ -358,6 +362,7 @@ difftime(as.Date("2014-03-01"), as.Date("2013-03-01"),
 (x <- difftime(as.Date("2014-03-01"), as.Date("2013-03-01"),
                units="weeks"))
 # convert to numeric to get rid of the words:
+
 as.numeric(x)
 
 # Let's explain POSIX a bit more. There are two classes in R: POSIXct and

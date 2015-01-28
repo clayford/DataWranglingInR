@@ -159,10 +159,58 @@ tout$p.value
 # Now do 1000 t-tests:
 out <- replicate(1000, t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value)
 # count the number of p-values less than 0.05 and divide by 1000 to estimate "power"
-sum(out < 0.05)/1000
+mean(out < 0.05)
 
 
-# We can pretty much do this for any model.
+# We can pretty much do this for any model, it just gets a little more complicated.
+
+# Let's say we have a drug for some condition. We conduct an experiment on 100 
+# people, 50 treated and 50 not-treated. We measure the difference in the 
+# response before and after treatment to get our final response measure. We also
+# want to control for a continuous covariate, age. This is a classic ANCOVA 
+# (analysis of covariance). Say we believe the treatment increases the response 
+# effect by 2 units and we don't want to miss that effect. Is our sample size
+# sufficient if we assume a standard error of 1?
+
+# Create a function to generate data
+genData <- function(n,sd){
+  treat <- rep(c(0,1),each=n)
+  age <- round(runif(n*2,20,60))
+  resp <- c(rnorm(n,10,sd),rnorm(n,12,sd))
+  data.frame(resp,age, treat)
+}
+# test the function
+genData(n=50, sd=1)
+
+# now use the function in the linear model function and call summary();
+# summary() produces a list with a matrix element called "coefficient"; the 3rd
+# row, 4th column of that matrix contains the p-value of the treatment
+# coeffient.
+summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4]
+
+# now generate 1000 data sets and run the model 100 times
+out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4])
+# percent of times significance achieved
+mean(out < 0.05)
+
+# with our function allowing different n and sd, we can try different settings:
+out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=2)))$coef[3,4])
+mean(out < 0.05)
+
+out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=200, sd=2)))$coef[3,4])
+mean(out < 0.05)
+
+# we can also loop through various settings and graph the results.
+power <- numeric(length(seq(50,300,by=25)))
+j <- 1
+for(i in seq(50,300,by=25)){
+  out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=i, sd=2)))$coef[3,4])
+  power[j] <- mean(out < 0.05)
+  j <- j + 1
+}
+# graph the result
+plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power")
+abline(h=0.8, lty=2)
 
 # simulate two-sample t tests to find sample size
 
@@ -173,16 +221,12 @@ tpower <- function(n, N=1000){
   sum(out < 0.05)/1000
 }
 
-pest <- sapply(10:30,tpower)
-plot(10:30,pest, type="b")
+n <- 10:30
+pest <- sapply(n,tpower)
+plot(n,pest, type="b")
 abline(h=0.8) # add line for 80% power
-
-
-nout <- numeric(length(10:30))
-for(i in 10:30){
-  nout[i] <- tpower(n=12)
-}
-
+# smallest value n such that power is > 0.80
+n[pest>0.8][1]
 
 
 # set seed to replicate results; doesn't matter what the "seed" is.
