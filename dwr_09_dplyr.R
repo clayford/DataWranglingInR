@@ -350,7 +350,7 @@ ggplot(electionData, aes(y=MOV2, x=State, fill=factor(Blue))) +
 
 # install.packages("maps)
 library(maps)
-# Use the map_data() function from the maps package to create a data from of US
+# Use the map_data() function from the maps package to create a data frame of US
 # map data.
 states <- map_data("state")
 # Now merge the map data with the election data by state name.

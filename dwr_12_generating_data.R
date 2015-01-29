@@ -57,6 +57,11 @@ table(apply(diceRolls, 2, sum))
 # and graph if we want:
 barplot(table(apply(diceRolls, 2, sum)))
 
+# The sample function also has a prob argument that allows you to assign 
+# unequal probabilities to your items. For example to simulate the flip of a
+# loaded coin, with Tails having probability 0.65:
+sample(c("H","T"),100,replace=TRUE,prob = c(0.35,0.65))
+
 # generating random data from a probability distribution ------------------
 
 # Theoretical probability distributions are often used to model distributions of
@@ -137,8 +142,8 @@ lines(x, y=dnorm(x, 175, 15))
 # mean = 0 and some finite standard deviation. We can use rnorm() to generate 
 # random errors and hence reverse engineer data suitable for simple linear
 # regression:
-x <- seq(10,50,length.out = 100)
-y <- 10 + 5*x + rnorm(100,sd=10)
+x <- seq(10,15,length.out = 100)
+y <- 10 + 5*x + rnorm(100,sd=4)
 plot(x,y)
 mod <- lm(y ~ x)
 summary(mod)
@@ -160,6 +165,23 @@ tout$p.value
 out <- replicate(1000, t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value)
 # count the number of p-values less than 0.05 and divide by 1000 to estimate "power"
 mean(out < 0.05)
+
+
+# simulate two-sample t tests to find sample size
+
+power.t.test(delta = 1, power = 0.8)
+
+tpower <- function(n, N=1000){
+  out <- replicate(N, t.test(rnorm(n,5,1),rnorm(n,6,1),alternative = "two.sided")$p.value)
+  sum(out < 0.05)/1000
+}
+
+n <- 10:30
+pest <- sapply(n,tpower)
+plot(n,pest, type="b")
+abline(h=0.8) # add line for 80% power
+# smallest value n such that power is > 0.80
+n[pest>0.8][1]
 
 
 # We can pretty much do this for any model, it just gets a little more complicated.
@@ -212,21 +234,6 @@ for(i in seq(50,300,by=25)){
 plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power")
 abline(h=0.8, lty=2)
 
-# simulate two-sample t tests to find sample size
-
-power.t.test(delta = 1, power = 0.8)
-
-tpower <- function(n, N=1000){
-  out <- replicate(N, t.test(rnorm(n,5,1),rnorm(n,6,1),alternative = "two.sided")$p.value)
-  sum(out < 0.05)/1000
-}
-
-n <- 10:30
-pest <- sapply(n,tpower)
-plot(n,pest, type="b")
-abline(h=0.8) # add line for 80% power
-# smallest value n such that power is > 0.80
-n[pest>0.8][1]
 
 
 # set seed to replicate results; doesn't matter what the "seed" is.
@@ -266,3 +273,57 @@ gl(n = 3, k = 1, length=20, labels=c("win","lose","draw"))
 # Bootstrapping -----------------------------------------------------------
 
 
+# Bootstrapping means using our original data for resampling. Previously we 
+# generated data from a theoretical distribution. Now we use our original 
+# sample. The main reason for doing this is to estimate the standard error of 
+# the sampling distribution. For a statistic such as the mean, we have an easy 
+# formula for the standard error. For other statsitics, such as a ratio or 
+# correlation, the formula for the standard error is more difficult and relies
+# on possibly incorrect assumptions.
+
+# The basic idea is to use your original sample as a surrogate for the 
+# population and sample from it with replacement many times (say B times), 
+# generating new samples the same size as the original. We call these bootstrap 
+# samples. For each bootstrap sample we calculate the statistic of interest. 
+# When done we calculate the standard deviation of the B statistics to estimate
+# the standard error of the sampling distribution.
+
+# Recall our tree data:
+trees <- read.csv("139_treecores_rings.txt")
+
+# The ratio of the mean diameter at breast height to the mean diameter at core
+# height is easily calculated:
+mean(trees$DBH.cm./trees$DCH.cm.)
+
+# But how accurate is this estimate? That's what the standard error tells us. 
+# Instead of googling the formula for the standard error of the ratio of means,
+# we could bootstrap our original sample (assuming it is random).
+
+ratio <- function(){
+  i <- sample(nrow(trees),nrow(trees),replace=T)
+  mean(trees$DBH.cm.[i]/trees$DCH.cm.[i])  
+}
+ratio()
+# run 1000 times
+bout <- replicate(1000,ratio())
+sd(bout)
+
+# Bootstrapping with the boot package
+bootRatio <- function(dat,i){
+  mean(dat$DBH.cm.[i]/dat$DCH.cm.[i])  
+}
+boot(trees, bootRatio, 999)
+bout2 <- boot(trees, bootRatio, 999)
+boot.ci(bout2, type = "perc")
+
+
+# mapply can also be used to apply varying argument levels to function.
+# Generate random normal samples of sizes ranging from 5:50
+outn <- mapply(rnorm, n=5:50, mean=10, sd=5)
+# then use sapply to find the standard error
+se <- sapply(outn, function(x)sd(x)/sqrt(length(x)))
+# and plot standard error versus sample size to see the decreasing trend.
+plot(5:50,se,xlab="N",ylab="SE")
+
+# I'm not sure what this is useful for, but I like it.
+mapply(seq, from=1:10, to=11:20)

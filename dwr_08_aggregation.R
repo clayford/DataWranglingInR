@@ -37,6 +37,15 @@ class(tab)
 # calling summary on a table object produces the following:
 summary(tab)
 
+# Tables can go beyond 2 dimensions. Let's add a third dimension:
+Z <- sample(c("I","II"), size=500, replace=T)
+table(X,Y,Z)
+# The tables in the 3rd dimension are sort of like subsetting a data frame by
+# the 3rd dimentsion's value and then creating a 2-way table:
+tdf <- data.frame(X,Y,Z)
+head(tdf)
+with(tdf[tdf$Z=="I",], table(X,Y))
+
 # The table() documentation in R has pretty good examples. Let's look at some of
 # them. I encourage you to occassionally work through the examples provided with
 # R documentation. They will often expose you to functions or methods of data 
@@ -49,10 +58,11 @@ summary(tab)
 # Poisson distribition to model counts, such as number of 911 calls per hour. 
 # The takeaway from this example is that table will coerce vectors of numbers
 # into factors and calculate a frequency distribution.
-table(rpois(100, 5))
+pdata <- rpois(100, 5)
+table(pdata)
 # And this is handy for plotting
-plot(table(rpois(100, 5)), type="h")
-barplot(table(rpois(100, 5)))
+plot(table(pdata), type="h")
+barplot(table(pdata))
 
 ## simple two-way contingency table
 
@@ -73,7 +83,7 @@ with(airquality, table(cut(Temp, quantile(Temp)), Month))
 # The data used is called UCBAdmissions (Student Admissions at UC Berkeley). It 
 # contains aggregate data on applicants to graduate school at Berkeley for the 
 # six largest departments in 1973 classified by admission and sex. It's already
-# a contingency 3-way table:
+# a 3-way contingency table:
 UCBAdmissions 
 class(UCBAdmissions)
 # Feeding this table to as.data.frame() returns a data frame with a column for
@@ -109,8 +119,8 @@ table(arrests$Children, useNA = "ifany")
 table(arrests$Children, useNA = "always")
 
 # We can also exclude certain factor levels. For example, let's exclude anyone
-# who had more than 7 children:
-table(arrests$Children, exclude = 7:23)
+# who had more than 7 children and NA:
+table(arrests$Children, exclude = c(7:23,NA))
 
 # We mentioned xtabs() as another way to create contigency tables. I find 
 # table() a little more intuitive to use, but xtabs() is nice because it has the
@@ -121,10 +131,12 @@ xtabs( ~ Events + Cloud.Cover.Index, data=weather)
 # Notice there is nothing on the left of the "~". We do that when creating a 
 # table of factors in a data frame for which there is no column of counts. That 
 # tends to be how most data are formatted, and thus this seems to be the way
-# xtabs() is most often used.
+# xtabs() is most often used. Note this is identical to:
+with(weather, table(Events, Cloud.Cover.Index))
 
-# A nice feature of the formula interface is the presence of the subset
-# argument, which allows to specify subsetting conditions in xtabs().
+# A nice feature of the formula interface is the presence of the subset 
+# argument, which allows to specify subsetting conditions in xtabs(). Below we
+# creat the same table but only for Max.TemperatureF > 50:
 xtabs( ~ Events + Cloud.Cover.Index, data=weather, 
        subset= Max.TemperatureF > 50,
        exclude=c("None","missing"))
@@ -134,10 +146,10 @@ xtabs( ~ Events + Cloud.Cover.Index, data=weather,
 # index (or indices) to generate marginal proportions. Let's go back to the
 # UCBAdmissions data. Recall it was a 3-way table. We can access parts of the
 # table using subsetting brackets. Notice it's a 2 x 2 x 6 table.
-dim(UCBAdmissions)
+dim(UCBAdmissions) # rows x columns x levels
 
 # To access the first table for department A:
-(deptA <- UCBAdmissions[,,1])
+(deptA <- UCBAdmissions[,,1]) # UCBAdmissions[,,"A"] works as well
 
 # Let's see how prop.table works on deptA (two-way table):
 prop.table(deptA) # all sum to 1
@@ -145,7 +157,7 @@ prop.table(deptA, margin = 1) # rows sum to 1
 prop.table(deptA, margin = 2) # columns sum to 1
 
 # Let's see how prop.table works on a three-way table
-(deptAB <- UCBAdmissions[,,1:2])
+(deptAB <- UCBAdmissions[,,1:2]) # UCBAdmissions[,,c("A","B")] works too
 
 # all 2x4=8 cells sum to 1
 prop.table(deptAB) 
@@ -169,7 +181,7 @@ prop.table(deptAB, margin = c(1,3))
 # columns within each 2x2 table sum to 1
 prop.table(deptAB, margin = c(2,3)) 
 
-# The addmargins() function does what you probably guess it does: it adds table
+# The addmargins() function does what you probably guess it does: it adds table 
 # margins.
 addmargins(deptA)
 # watch what it does on a 3-way table
@@ -207,8 +219,8 @@ CrossTable(arrests$Sex)
 # data frame or vector.
 
 # The bread and butter aggregation function in base R is aggregate(). It works 
-# with a formula interface and will return a data frame. Let's see some examples
-# using our weather data:
+# with a formula interface and will return a data frame, but can only use one
+# function at a time. Let's see some examples using our weather data:
 
 # Find the mean minimum temperature per Event
 aggregate(Min.TemperatureF ~ Events, data=weather, mean)
@@ -248,19 +260,15 @@ chicks
 stripchart(weight ~ feed, data=chickwts, pch=1, vertical = T, ylim=c(100,400), las=1,
            col="grey60")
 points(1:6,chicks$mean, pch=19, col="red")
-# add standard error bars:
+# add 2x standard error bars:
 segments(x0 = 1:6, y0 = chicks$mean+(2*chicks$SE),
          x1 = 1:6, y1 = chicks$mean-(2*chicks$SE), 
          col="red")
 
-# Another function useful for aggregating continuous data is tapply(), which we
-# discussed in a previous lecture. The R documentation describes tapply as a
-# function that allows you to "Apply a function to each cell of a ragged array,
-# that is to each (non-empty) group of values given by a unique combination of
-# the levels of certain factors." What does that mean? Basically it means you
-# can aggregate groups of different sizes, just as you can with aggregate. The
-# main differences are there is no formula interface and it does not return a
-# data frame.
+# Another function useful for aggregating continuous data is tapply(), which we 
+# discussed in a previous lecture. The main differences between it and
+# aggregate() are there is no formula interface and it does not return a data
+# frame.
 
 # The basic syntax is tapply(X, INDEX, FUN), where X is a vector of values, 
 # INDEX is a vector(s) of group labels for X, and FUN is a function. Going to
@@ -274,8 +282,8 @@ with(weather, tapply(Min.TemperatureF, Events, mean))
 
 # tapply is not limited to returning scalars (ie, single values). For example,
 # see how tapply and aggregate differ in the way they return a range:
-aggregate(Min.TemperatureF ~ Events, data=weather, range)
-tapply(weather$Min.TemperatureF, weather$Events, range)
+aggregate(Min.TemperatureF ~ Events, data=weather, range) # data frame
+tapply(weather$Min.TemperatureF, weather$Events, range) # list
 
 # tapply can take more than one value for the INDEX argument. They just need to
 # be formatted as a list.
@@ -291,7 +299,9 @@ with(mtcars, tapply(mpg, list(gear, am), mean))
 
 # install.packages("doBy")
 library(doBy)
+# using 3 functions: mean,var,length
 summaryBy(Min.TemperatureF ~ Events, data=weather, FUN=c(mean,var,length))
+# using 3 functions (mean,var,length) and multiple responses
 summaryBy(Min.TemperatureF + Max.TemperatureF ~ Events, 
           data=weather, FUN=c(mean,var,length))
 
@@ -323,11 +333,11 @@ table(weather$Max.TemperatureF > 90, weather$Max.Humidity > 90)
 # based on values in an auxiliary vector. One example is calculating proportions
 # in a tables.
 
-# sweep() takes 4 arguments: a matrix, the matrix margin, an auxiliary martix
+# sweep() takes 4 arguments: a matrix, the matrix margin, an auxiliary matrix
 # and a function.
 
 # calculating row proportions in a table:
-# first create the matrix:
+# first create the "matrix":
 (tab <- with(arrests, table(MaritalStatus, Sex)))
 # create an auxiliary vector of column totals:
 cs <- colSums(tab)
@@ -337,6 +347,7 @@ sweep(tab, 2, cs, "/")
 
 # Of course, prop.table() does the same things:
 prop.table(tab,margin = 2)
+
 # In fact, the help page for prop.table says "This is really sweep(x, margin,
 # margin.table(x, margin), "/") for newbies"
 rm(tab,cs)
@@ -360,12 +371,34 @@ head(centered2[,1:3])
 # mapply() ----------------------------------------------------------------
 
 # mapply is a multivariate version of sapply. The basic syntax is mapply(FUN, 
-# ...) where FUN is a function and ... are arguments. This is best explained
-# with a demonstration.
+# ...) where FUN is a function and ... are arguments. With sapply(), you apply a
+# function to a single data structure. With mapply, you can apply a function to
+# multiple data structures. This is best explained with a demonstration.
 
 # Let's say we want to calculate the mean value for each variable in our temp 
-# matrix using only those values that are greater than the median. First we
-# write a function:
+# matrix using only those values that are greater than the median in each
+# column. First we write a function:
 meanmed <- function(v,m) mean(v[v >= m], na.rm=TRUE)
+# next we calculate the medians
 meds <- apply(temp,2,median, na.rm=TRUE)
-mapply(meanmed, temp, meds)
+# Then we use mapply to apply the meanmed function to the two data structures.
+mapply(meanmed, v=temp, m=meds)
+
+# How would we do that without mapply? 
+sapply(sapply(temp, function(x)x[x >= median(x, na.rm=TRUE)]), mean, na.rm=TRUE)
+
+# That's why we say "mapply is a multivariate version of sapply."
+
+# Of course you can also do something like this!
+meanMed <- function(x){
+  tmp <- x[x >= median(x, na.rm=TRUE)]
+  mean(tmp, na.rm=TRUE)
+}
+apply(temp,2,meanMed)
+
+# mapply can pretty much do anything that sapply can do, you just have to
+# reverse the order of the arguments.
+sapply(weather, class)
+mapply(class, weather)
+
+
