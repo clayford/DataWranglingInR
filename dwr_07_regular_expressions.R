@@ -18,11 +18,19 @@ library(qdapRegex)
 
 # Intro -------------------------------------------------------------------
 
-# A 'regular expression' is a pattern that describes a set of strings. Regular
-# expressions are a language into itself.
+# A 'regular expression' is a pattern that describes a set of strings. For 
+# example, say you want to find all 5-digit numbers in a document, or find all 5
+# digit numbers ending in "00", or find all 5 digit numbers at the end of a 
+# sentence. These are examples of string patterns. Regular Expressions are the
+# language we use to describe the pattern.
 
-# quote floating around internet: Some people, when confronted with a problem,
-# think "I know, I'll use regular expressions." Now they have two problems.
+# You should know, however, regular expressions are a language into itself.
+# There are entire books devoted to regular expressions. 
+
+# Quote floating around internet: "Some people, when confronted with a problem, 
+# think 'I know, I'll use regular expressions.' Now they have two problems." 
+# Regular expressions can be tricky to get right, especially for complex
+# patterns.
 
 # We will only dabble in regular expressions. Key lesson: recognize when you 
 # need a regular expression and know enough to cobble one together using your
@@ -72,6 +80,9 @@ library(qdapRegex)
 # (3) CHARACTER CLASSES
 # a range of characters to be matched;
 # placed in brackets: []
+# For example: [a-q] means all letters from a - q
+# The ^ symbol means "not" when used in brackets, so [^abc] means "Not (a or b
+# or c)"
 
 # see help(regex) for an indepth overview of regular expressions.
 
@@ -79,17 +90,20 @@ library(qdapRegex)
 
 # Let's create some sample text to demonstrate regular expressions:
 
-someText <- c("  here's a sentence", "This is me typing  ", "You saw 4 monkeys?", 
+someText <- c("  here's a sentence", 
+              "This is me typing  ", 
+              "You saw 4 monkeys?", 
               "There are 10 kinds of people,    those that understand binary       
               and the other 9 that don't care",
               "Who likes pancakes? I do. I really really like pancakes!", 
               "     <strong>Bolded text is bold and daring</strong>",
-              "figure1.jpg", "cover.jpg")
+              "figure1.jpg", 
+              "cover.jpg")
 someText
 
 # find elements in vector beginning with 1 or more spaces
 grep("^ +", someText, value=T) 
-# find elements containing a question mark
+# find elements containing a question mark; need to "escape" the "?"
 grep("\\?", someText, value=T) 
 # find elements ending with a question mark
 grep("\\?$", someText, value=T) 
@@ -97,7 +111,7 @@ grep("\\?$", someText, value=T)
 grep("[0-9]+", someText, value=T) 
 # find elements containing numbers with 2 digits
 grep("[0-9]{2}", someText, value=T)
-# text ending with .jpg
+# text ending with .jpg; need to escape the "."
 grep("\\.jpg$", someText, value=T) 
 # text beginning with only letters, and containing only letters, ending in .jpg
 grep("^[a-zA-Z]+\\.jpg", someText, value=T)
@@ -118,12 +132,14 @@ gsub(" +"," ", someText)
 gsub("^ +| +$","", someText)
 
 # Or better yet, just use the stringr function str_trim()
-library(stringr)
 str_trim(someText)
 
 # (3) Remove HTML/XML tags (basic)
 # "<" followed by anything but ">" and ending with ">" 
 gsub("<[^>]*>","",someText)
+
+# Or better yet, just use the qdapRegex function rm_angle()
+rm_angle(someText)
 
 
 # Extract with RegEx ------------------------------------------------------
@@ -139,8 +155,11 @@ gsub("<[^>]*>","",someText)
 str_extract(someText, "[0-9]{1,2}") 
 # all matches; returns a list
 str_extract_all(someText, "[0-9]{1,2}") 
+# can use the base R function unlist() function to get just the numbers in a
+# vector:
+unlist(str_extract_all(someText, "[0-9]{1,2}"))
 
-# (2) extract a string that starts with a . followed by 3 lower-case letters:
+# (2) extract a string that contains a . followed by 3 lower-case letters:
 str_extract(someText,"\\.[a-z]{3}")
 
 # (3) extract text beginning with only letters, and containing only letters,
@@ -158,7 +177,8 @@ str_extract(someText, "^[a-z]+\\.jpg")
 # 113th Congress Senate Bills: first 100 results.
 senate_bills <- readLines("http://thomas.loc.gov/cgi-bin/bdquery/d?d113:0:./list/bss/d113SN.lst:")
 
-# Noteice senate_bills is a vector, not a data frame:
+# Notice senate_bills is a vector, not a data frame. Each element of text
+# corresponds to one line of HTML code:
 senate_bills[1:10]
 
 # We'd like to create a data frame that includes bill number, bill title,
@@ -360,7 +380,7 @@ rushStudioAlbums <- data.frame(year, album)
 head(rushStudioAlbums)
 
 # There is also a package called stringi that I know very little about, except 
-# that it bills itself as "THE string processing package for R" Might be worth a
+# that it bills itself as "THE string processing package for R". Might be worth a
 # look: http://www.rexamine.com/resources/stringi/
 
 # save data for next set of lecture notes

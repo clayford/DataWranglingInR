@@ -58,7 +58,7 @@ ddply(weather, "Events", summarize,
 
 # This is the same as we did before, but notice we calculated more than one 
 # summary. Also notice we used calculated summaries in the subsequent 
-# calculation of seMaxTemp! We cannot do that with aggregate() or transform().
+# calculation of seMaxTemp. We cannot do that with aggregate() or transform().
 
 
 # dplyr -------------------------------------------------------------------
@@ -67,9 +67,13 @@ ddply(weather, "Events", summarize,
 # faster than plyr and easier to use (in my opinion). In addition it comes with
 # a fantastic Introductory vignette in the documentation. 
 
-# dplyr provides data manipulation verbs that work on a single data frame. The 
-# dplyr philosophy is to have small functions that each do one thing well. The
-# current verbs include:
+# Also, see the data wrangling cheat sheet on Collab under Resources; or go to
+# the source: 
+# http://www.rstudio.com/wp-content/uploads/2015/01/data-wrangling-cheatsheet.pdf
+
+# dplyr provides data manipulation verbs that work on a single data frame, a
+# sort of grammar of data wrangling. The dplyr philosophy is to have small
+# functions that each do one thing well. The current verbs include:
 
 # filter() - select a subset of the rows of a data frame
 
@@ -112,39 +116,49 @@ library(Lahman) # baseball data
 head(Batting, n=10)
 nrow(Batting)
 
-# Say we want to find the top 5 highest number of "Game as batter" 
-# (G_batting) for each player
+# Say we want to find the top 5 players with the most "Games as batter" 
+# (G_batting)
 
-# first, try it with plyr
+# first, try it with plyr; note the "." function on the grouping variable. This
+# allows you specify the grouping variable without quotes.
+
 # this takes about 10 seconds on my computer
-games <- ddply(Batting, "playerID", summarize, total = sum(G_batting, na.rm=T))
+games <- ddply(Batting, .(playerID), summarize, total = sum(G_batting, na.rm=T))
+# then use plyr's arrange function to sort
 head(arrange(games, desc(total)), 5)
 
-# now try it with dplyr
-# first detach plyr
-detach("package:plyr", unload=TRUE) # prevent conflicts with dplyr
+# Now let's try it with dplyr. First detach plyr to prevent conflicts with 
+# dplyr. (Actually I think they may play well together now, but historically 
+# they haven't.) The unload=TRUE argument unloads the package from memory; 
+# Otherwise, R removes the package from the search path but doesn’t unload it.
+detach("package:plyr", unload=TRUE) 
 # now load dplyr
 library(dplyr)
+
+# OK, let's use dplyr() functions.
 
 # First group Batting by playerID; create new data frame
 players <- group_by(Batting, playerID)
 # next sum "Game as batter" for each player and sort
-games <- summarize(players, total = sum(G_batting, na.rm=T)) # note the speed!
+games <- summarise(players, total = sum(G_batting, na.rm=T)) # note the speed!
 head(arrange(games, desc(total)), 5)
 
 # how to do with base R functions: 
 games2 <- aggregate(G_batting ~ playerID, data=Batting, sum)
-head(games2[order(games2$G_batting, decreasing=T),],5)
+head(games2[order(games2$G_batting, decreasing=T),],n=5)
 
 # so dplyr is not much faster than base R (in this example), but the syntax is
 # easier to understand and learn.
 
-# dplyr also provides ability to chain operations using the %>% operator. Use
-# Ctrl + Shift + M to quickly enter the chaining operator: %>%
+## the %>% operator
 
+# dplyr also provides the ability to chain operations using the %>% operator. 
+# Use Ctrl + Shift + M to quickly enter the chaining operator: %>%
 
-# Here's the same thing as above;
-# functions chained left-to-right with the %>% operator
+# This is kind of a big deal...
+
+# Here's the same thing as above; but chained left-to-right with the %>%
+# operator
 Batting %>%
   group_by(playerID) %>%
   summarize(total = sum(G_batting)) %>%
@@ -153,50 +167,80 @@ Batting %>%
 
 # In words, that says, "take the Batting data frame, break into groups by 
 # playerID, within each group take the sum of G_batting and return a new data 
-# frame containing the sum, sort the new data frame in descending order and
-# return a new data frame, and finally return the first 5 rows of the new data
-# frame.
+# frame containing the sum, sort the new data frame in descending order and 
+# return a new data frame, and finally return the first 5 rows of the new data 
+# frame." Notice we can use non-dplyr functions when chaining as we did with
+# head().
 
 
-# The dplyr verbs ---------------------------------------------------------
 
-# first, may want to consider converting data frame to tbl_df, a wrapper that
-# doesn't print a lot of data to the screen.
+# More on the dplyr verbs -------------------------------------------------
+
+# tbl_df() - wraps a local data frame. The main advantage to using a tbl_df over
+# a regular data frame is the printing: tbl objects only print a few rows and 
+# all the columns that fit on one screen, describing the rest of it as text. 
+# This is not technically one of the dplyr "verbs", nor is it even required, but
+# it can help you from blowing away your console by accidentally printing your
+# entire data frame.
+
+class(weather)
+# Create a data frame tbl.
 weather <- tbl_df(weather)
+class(weather)
 weather
+# dplyr has something similar to str() called glimpse(), thought str() still
+# works on data frame tbl.
+glimpse(weather)
 
-# filter() - select a subset of the rows of a data frame
-filter(tbl_df(popVa), city.ind==1) # cities
-filter(tbl_df(popVa), respop72012>30000 & city.ind==0) # towns w/ population > 30,000 
+# if for some reason you want to see the entire data frame, you can use
+# as.data.frame(weather)
+
+# filter() - select a subset of the rows of a data frame; works much like
+# subset()
+
+# days it snowed
+filter(weather, snow==1) 
+# Max temp > 90 and max humidity > 90
+filter(weather, Max.TemperatureF > 90 & Max.Humidity > 90) 
 
 # slice() - select rows by position
 slice(weather,1:10)
 
-# arrange() - reorder (sort) rows by columns
+# arrange() - reorder (sort) rows by columns; much easier, in my opinion, than
+# using order() with subsetting brackets
+
+# notice we can use tbl_df() on the fly
 arrange(tbl_df(popVa), respop72012)
 arrange(tbl_df(popVa), desc(respop72012)) # uses desc() helper function
+# sort data frame by more than one variable
 arrange(weather, Max.TemperatureF, Max.Dew.PointF)
 
 # select() - select columns
-select(weather, Max.TemperatureF, Min.TemperatureF, Temp.Range)[1:4,]
-select(electionData, 12:15)
+select(weather, Max.TemperatureF, Min.TemperatureF, Temp.Range)
+select(tbl_df(electionData), 7:10)
+# That's nice, but we can use ":" with the actual variable names
+select(tbl_df(allStocks), Open:Close)
+select(tbl_df(allStocks), Open:Close, -Low)
 
-# rename() - rename variables (column headers)
+# If variable has spaces, surround it with back ticks: `
+select(tbl_df(electionData), State:`Elec.Vote D`)
+
+# rename() - rename variables (column headers); new name = old name
 weather <- rename(weather, Snowed = snow)
 # using rename() when variable name has spaces (use backticks)
 electionData <- rename(electionData, MOV = `Margin.of.Victory Votes`)
 
 # distinct()- return the unique values in a data frame; often used with select()
-distinct(select(weather, Events))
+distinct(select(arrests, Children))
 
 # mutate() - add new columns that are functions of existing columns
 weather <- mutate(weather, Dew.Point.range= Max.Dew.PointF - Min.DewpointF)
-weather$Dew.Point.range
+weather$Dew.Point.range[1:10]
 weather <- mutate(weather, Temp.Centered=Max.TemperatureF-mean(Max.TemperatureF))
 weather$Temp.Centered[1:5]
 sum(weather$Temp.Centered) # should sum to 0, or thereabouts
 
-# transmute() - like mutate, but keeps only the new columns
+# transmute() - like mutate, but keeps only the newly created variables
 changes <- transmute(allStocks, Change = Close - Open)
 head(changes)
 
@@ -210,24 +254,35 @@ sample_n(weather, 5)
 # sample_frac() - randomly sample fixed fraction of rows of a data frame
 sample_frac(weather, 0.01)
 
-# dplyr provides numerous helper functions that work well with summarise:
-# n(): number of observations in the current group
-# n_distinct(x): count the number of unique values in x.
+# dplyr provides numerous helper functions: 
+
+# n(): number of observations in the current group; This function can only be
+# used from within summarise, mutate and filter. For example:
+summarise(group_by(weather, Events),n=n())
+
+# n_distinct(x): count the number of unique values in x. This is a faster and
+# more concise equivalent of length(unique(x))
+n_distinct(arrests$Children)
+
 # first(x), last(x) and nth(x, n): similar to x[1], x[length(x)], x[n] 
+first(popVa$city)
+last(popVa$city)
+nth(popVa$city, 10)
 
 # There also are a number of helper functions you can use within select(), like
 # starts_with(), ends_with(), matches() and contains(). These let you quickly
 # match larger blocks of variable that meet some criterion.
 
-# select weather columns that contain "Max"
+# select weather columns that starts with "Max"
 select(weather, starts_with("Max."))[1:4,]
+# select popVa columns that contain "2010"
 select(popVa, contains("2010"))[1:4,]
+
 
 # Chaining ----------------------------------------------------------------
 
-# The dplyr verbs work best when chained together! dplyr provides the %>%
-# operator for chaining dplyr verbs (functions). Let's work through some
-# examples to show how it works.
+# The dplyr verbs work best when chained together. Let's work through some 
+# examples to solidify this concept.
 
 # Find the minimum and maximum stock price for each stock
 allStocks %>% 
@@ -246,7 +301,7 @@ popVa %>%
   summarize(meanPop=mean(respop72012))
 
 # get % change in population from April 2010 to July 2012,
-# rounded to one place, and sort descending
+# rounded to one place, sort descending, show top 5
 popVa %>%
   select(city, rescen42010, respop72012) %>%
   mutate(percentChange=round((respop72012-rescen42010)/rescen42010*100,1),
@@ -265,14 +320,14 @@ popVaGRate <- popVa %>%
 popVaGRate %>%
   filter(growing == 1) %>%
   arrange(desc(percentChange)) %>%
-  select(city,percentChange, respop72012, city.ind) %>%
+  select(city,percentChange, rescen42010, respop72012, city.ind) %>%
   head(n=10)
 
 # cosponsors of senate bills: the top 10 higgest cosponsored bills
 senate_bills %>%
   filter(cosponsors > 0) %>%
   arrange(desc(cosponsors)) %>%
-  select(title, cosponsors) %>%
+  select(bill, sponsor, cosponsors) %>%
   head(n=10)
 
 # number of bills per sponsor (senator);
@@ -284,14 +339,28 @@ senate_bills %>%
   arrange(desc(total)) %>%
   filter(total>1)
 
+# total arrested by occupation and sex
+arrests %>%
+  group_by(Occup, Sex) %>%
+  filter(Sex != 9) %>%
+  summarise(total = n())
+
+# add a variable to weather for cumulative precipitation using cumsum(), a base
+# R function.
+weather <- weather %>%
+  mutate(cumPrecip = cumsum(weather$PrecipitationIn))
+# quick plot of cumulative precipitation over 2013
+plot(cumPrecip ~ Date, data=weather, type="l")
+
 # calculate mean max temperature per month
 weather %>%
   group_by(months(Date)) %>%
   summarize(meanMaxTemp=round(mean(Max.TemperatureF)))
 
 # Notice the months are sorted alphabetically. An easy way to fix is to use the 
-# month() function in the lubridate package. Notice below we can also create a
-# name for our grouping variable in the group_by() function:
+# month() function in the lubridate package (different from the base R months()
+# function.) Notice below we can also create a name for our grouping variable in
+# the group_by() function:
 library(lubridate)
 weather %>%
   group_by(Month=month(Date, label=T)) %>%
@@ -318,6 +387,7 @@ sapply(electionData, class)[2:6]
 makeNum <- function(x) as.numeric(as.character(x))
 # make sure it works
 makeNum(electionData$Total.Popular.Vote)[1:3]
+class(makeNum(electionData$Total.Popular.Vote)[1:3])
 
 # Now we'll use the rename and mutate verbs:
 electionData <- electionData %>% 
@@ -351,14 +421,15 @@ ggplot(electionData, aes(y=MOV2, x=State, fill=factor(Blue))) +
 # install.packages("maps)
 library(maps)
 # Use the map_data() function from the maps package to create a data frame of US
-# map data.
+# map data. states contains lat/long data for states.
 states <- map_data("state")
 # Now merge the map data with the election data by state name.
 choro <- merge(states, electionData, by.x = "region", by.y = "State")
 # reorder the rows because order matters when coloring in states
 choro <- arrange(choro, order)
+head(choro)[1:4,1:8]
 # now plot the map using ggplot
-ggplot(choro, aes(long, lat, group=group, fill=MOV2)) +
+ggplot(choro, aes(x=long, y=lat, group=group, fill=MOV2)) +
   geom_polygon(color="black") +
   scale_fill_gradient2(low="red", mid="white", high="blue")
 

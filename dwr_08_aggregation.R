@@ -10,8 +10,8 @@ load("../data/datasets_L07.Rda")
 # Aggregation means collecting units in a group and performing an operation on 
 # them such as taking the sum or mean. In many cases, THAT is the data analysis.
 # That's what is referred to as descritive statistics. Data aggregation is also 
-# used to create a data frame for inferential analysis or for preparing data for
-# graphing.
+# used to create a data frame for inferential analysis, to prepare data for 
+# graphing, or as an intermediate step for additional data wrangling.
 
 # categorical data --------------------------------------------------------
 
@@ -21,13 +21,18 @@ load("../data/datasets_L07.Rda")
 
 # The basic function is table(). Simply give table() objects that can be 
 # intertrepted as factors and it will construct a table. Below we generate two 
-# vectors of factors and ask table to cross-classify them. Imagine the two 
-# vectors stacked on top of one another and R counting up the number of
-# combinations.
+# vectors and ask table to cross-classify them. Imagine the two vectors stacked
+# on top of one another and R counting up the number of combinations.
 
 X <- sample(1:2,size = 500,replace=TRUE,prob = c(0.8,0.2))
 Y <- sample(c("A","B"),size = 500,replace=TRUE, prob = c(0.4,0.6))
+X[1:4]
+Y[1:4]
 table(X,Y)
+
+# Notice X and Y are not factors:
+class(X);class(Y)
+# ...yet table coerced them to factors before tabulation. 
 
 # tables can be saved:
 tab <- table(X,Y)
@@ -37,6 +42,12 @@ class(tab)
 # calling summary on a table object produces the following:
 summary(tab)
 
+# more than meets the eye in summary(tab)
+str(summary(tab))
+# we see it's a list object. This means we can extract information from it, such
+# as the p-value for the test of independence:
+summary(tab)$p.value
+
 # Tables can go beyond 2 dimensions. Let's add a third dimension:
 Z <- sample(c("I","II"), size=500, replace=T)
 table(X,Y,Z)
@@ -44,10 +55,10 @@ table(X,Y,Z)
 # the 3rd dimentsion's value and then creating a 2-way table:
 tdf <- data.frame(X,Y,Z)
 head(tdf)
-with(tdf[tdf$Z=="I",], table(X,Y))
+with(tdf[tdf$Z=="II",], table(X,Y))
 
 # The table() documentation in R has pretty good examples. Let's look at some of
-# them. I encourage you to occassionally work through the examples provided with
+# them. I encourage you to occasionally work through the examples provided with
 # R documentation. They will often expose you to functions or methods of data 
 # manipulation that you were not aware of.
 
@@ -86,13 +97,17 @@ with(airquality, table(cut(Temp, quantile(Temp)), Month))
 # a 3-way contingency table:
 UCBAdmissions 
 class(UCBAdmissions)
-# Feeding this table to as.data.frame() returns a data frame with a column for
-# Frequencies that displays the number of each table cell.
+# Feeding this table to as.data.frame() returns a data frame with a column for 
+# Frequencies that displays the number of each table cell. In other words, it 
+# converts a table to a data.frame. It has the same information as the table,
+# but stored as a data frame with the counts in the Freq column.
 as.data.frame(UCBAdmissions)
+
 # Now let's save the data frame and give it to xtabs()
 DF <- as.data.frame(UCBAdmissions)
-head(DF)
-xtabs(Freq ~ ., DF) # reverses the effect of as.data.frame()
+xtabs(Freq ~ ., DF) 
+# We see that xtabs() reverses the effect of as.data.frame(). In other words,
+# xtabs() allows you to take a data frame with counts and produce a table.
 
 # The xtabs() function allows a formula interface where counts are provided on 
 # the left of the "~" and factors on the right. The . means use all factors in 
@@ -104,6 +119,9 @@ xtabs(Freq ~ Admit + Gender, DF)
 
 ## Including/Excluding levels
 
+# The table() documentation has examples for Including/Excluding levels, but
+# let's use "our" data to illustrate.
+
 # table() does not count NA by default:
 table(arrests$Children)
 
@@ -113,10 +131,11 @@ table(arrests$Children, exclude = NULL)
 # You can also use the useNA argument, which takes three values: "no", "ifany",
 # or "always". The default is "no":
 table(arrests$Children, useNA = "no")
+# show NA if any exist
 table(arrests$Children, useNA = "ifany")
 
-# show tally of NA even if there is none:
-table(arrests$Children, useNA = "always")
+# useNA = "always" means show tally of NA even if there is none:
+with(arrests, table(Children[!is.na(Children)], useNA = "always"))
 
 # We can also exclude certain factor levels. For example, let's exclude anyone
 # who had more than 7 children and NA:
@@ -248,7 +267,8 @@ str(chickwts)
 
 # Say we want to calculate the mean and standard error:
 aggregate(weight ~ feed, data=chickwts, mean)
-aggregate(weight ~ feed, data=chickwts, function(x)sd(x)/sqrt(length(x)))
+aggregate(weight ~ feed, data=chickwts, function(x)round(sd(x)/sqrt(length(x)),2))
+# NOTE: round(x,n) rounds x to n decimal places
 
 # we can save the results as a data frame and manipulate accordingly:
 chickM <- aggregate(weight ~ feed, data=chickwts, mean)
@@ -289,10 +309,11 @@ tapply(weather$Min.TemperatureF, weather$Events, range) # list
 # be formatted as a list.
 with(mtcars, tapply(mpg, list(gear, am), mean))
 
-# Notice tapply returned an arrary (two-way table) with every possible 
-# combination, even those for which no values of mpg exist. This differs from 
-# aggregate() which returned a data frame only containing rows for those
-# combinations with values of mpg.
+# Notice tapply returned an two-way table with every possible combination, even
+# those for which no values of mpg exist. This differs from aggregate() which
+# returned a data frame only containing rows for those combinations with values
+# of mpg.
+aggregate(mpg ~ gear + am, data=mtcars, mean)
 
 # The doBy package has a nice function for group summaries called summaryBy. It
 # works like aggregate() except you can specify more than one function. 
@@ -331,16 +352,22 @@ table(weather$Max.TemperatureF > 90, weather$Max.Humidity > 90)
 
 # The sweep() function allows you to process matrix rows or columns differently 
 # based on values in an auxiliary vector. One example is calculating proportions
-# in a tables.
+# in a table, say by column. You have to first sum the columns, and then divide 
+# each value in a column by its column sum. The sweep() function generalizes
+# this operationn.
 
 # sweep() takes 4 arguments: a matrix, the matrix margin, an auxiliary matrix
 # and a function.
 
-# calculating row proportions in a table:
+# calculating column proportions in a table:
 # first create the "matrix":
 (tab <- with(arrests, table(MaritalStatus, Sex)))
+# Note: For Sex, 1 = Male, 2 = Female, 9 = No info; For MaritalStatus, 1 = 
+# Married, 2 = Single, 3 = Widowed, 9 = No info
+
 # create an auxiliary vector of column totals:
 cs <- colSums(tab)
+cs
 # Then sweep. In other words, divide each value in each column of the tab matrix
 # by the value in the cs vector:
 sweep(tab, 2, cs, "/") 
@@ -353,18 +380,18 @@ prop.table(tab,margin = 2)
 rm(tab,cs)
 
 # centering variables: first select only those columns from weather that are of
-# class integer and not just 0,1:
+# class integer and not just 0,1 (or greater than two values):
 temp <- weather[,sapply(weather,class)=="integer" & 
-                  lapply(lapply(weather, unique), length)!= 2]
+                  sapply(lapply(weather, unique), length)!= 2]
 # calculate means of each column
 cm <- colMeans(temp, na.rm = TRUE)
 # Then sweep. In other words, substract from each value in each column of the
 # temp matrix the corresponding value in the cm vector.
-centered <- sweep(temp,2,cm,"-")
+centered <- sweep(temp, 2, cm, "-")
 head(centered[,1:3])
 
 # Of course this does the same thing:
-centered2 <- scale(temp,scale = FALSE, center = TRUE)
+centered2 <- scale(temp, scale = FALSE, center = TRUE)
 head(centered2[,1:3])
 
 
@@ -377,7 +404,7 @@ head(centered2[,1:3])
 
 # Let's say we want to calculate the mean value for each variable in our temp 
 # matrix using only those values that are greater than the median in each
-# column. First we write a function:
+# column. First we write a function where v=vector and m=mean:
 meanmed <- function(v,m) mean(v[v >= m], na.rm=TRUE)
 # next we calculate the medians
 meds <- apply(temp,2,median, na.rm=TRUE)
@@ -400,5 +427,4 @@ apply(temp,2,meanMed)
 # reverse the order of the arguments.
 sapply(weather, class)
 mapply(class, weather)
-
 

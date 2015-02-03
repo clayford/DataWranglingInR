@@ -8,59 +8,50 @@
 
 # It is often desirable to generate fake data. Sometimes we just want data to 
 # play around with. Other times we want to generate data similar to what we 
-# expect to collect to see if our proposed analysis works as expected. R has
-# excellent facilities for generating random data.
+# expect to collect to see if our proposed analysis works as expected. Or we 
+# want to simulate data collection many times over in order to estimate a 
+# statistical measure such as standard error. R has excellent facilities for
+# generating random data.
 
 
-# sampling data -----------------------------------------------------------
+# generating fixed levels -------------------------------------------------
 
-# In statistics we usually can't measure every member of population. The best we
-# can do is take a sample and then use that sample as a surrogate for the 
-# population of interest. A common example is national election polling. It's 
-# impractical to ask every registered voter who they will vote for. Therefore 
-# pollsters will take a (hopefully random) sample of about 1000 people to draw
-# inferences about how the entire population of registered voters will vote.
+# Often generating data means creating a series of fixed levels, such as 100 
+# males and 100 females. The rep() function can be useful for this. Below we
+# create 100 each of "M" and "F":
+rep(c("M","F"), each=100)
+# Note this generated a character vector. To use as a "factor", we would need to
+# wrap in the factor() function.
 
-# R allows us to simulate this kind of random sampling. A basic but powerful 
-# function for this is sample(). The syntax is sample(x, size, replace) where x 
-# is either a vector of one or more elements from which to choose, or a positive
-# integer, size is a non-negative integer giving the number of items to choose, 
-# and replace is a logical setting about whether sampling be with replacement
-# (The default is FALSE).
+# Perhaps a better function for creating factors is the gl() function. gl = 
+# "generate levels". Below we generate a factor with 2 levels of 100 each and
+# labels of "M" and "F". Notice the result is a factor.
+gl(n = 2, k = 100, labels = c("M","F"))
 
-# We can use sample to generate the roll of a die
-sample(x=1:6, size=1)
+# A more common occurence is combinations of fixed levels, say gender, 
+# treatment, and race. A function that helps create every combination of levels 
+# is expand.grid(). Below we generate every combination the levels provided for
+# gender, treatment and race:
+expand.grid(gender=c("M","F"), 
+            treatmen=c("Treat","Placebo"), 
+            race=c("White","Black","Asian","Multiracial"))
 
-# With replicate(), we can simulate the roll of a die 1000 times. The syntax for
-# replicate() is replicate(n, expr) where n is the number of replications and 
-# expr is the expression to replicate. Here we replicate 1000 rolls of a fair
-# die.
-replicate(n=1000, sample(x=1:6, size=1))
+# Create a experimental design plan and write out to csv file.
 
-# Using table, we can simulate a 1000 die rolls and tally up the totals
-table(replicate(n=1000,sample(1:6,1)))
+# In this experiment, 3 people throw 3 different kinds of paper airplanes, made of 3
+# paper types (3x3 = 9 planes), throwing each plane 8 times.
 
-# To simulate rolling two dice, or rolling a die two times, we need to set size
-# = 2 and replace = TRUE. If we don't set replace = TRUE, then we would never
-# roll a pair.
-sample(x=1:6, size=2, replace=T)
+# > 3*3*3*8 
+# [1] 216
 
-# again we can use replicate to simulate rolling two dice a 1000 times. The
-# result is a matrix.
-diceRolls <- replicate(n=1000, sample(x=1:6, size=2, replace = TRUE))
-# First 10 rolls:
-diceRolls[,1:10]
-
-# and then we can summarize the distribution of the sum of the dice:
-table(apply(diceRolls, 2, sum))
-
-# and graph if we want:
-barplot(table(apply(diceRolls, 2, sum)))
-
-# The sample function also has a prob argument that allows you to assign 
-# unequal probabilities to your items. For example to simulate the flip of a
-# loaded coin, with Tails having probability 0.65:
-sample(c("H","T"),100,replace=TRUE,prob = c(0.35,0.65))
+schedule <- expand.grid(thrower=c("Clay","John","Mark"),
+            paper=c(15,20,22),
+            design=c("a","b","c"),
+            rep=1:8)
+# randomize and drop rep:
+schedule <- schedule[sample(nrow(schedule)),1:3]
+# output to csv file for logging data
+write.csv(schedule, file="throwLog.csv", row.names=FALSE)
 
 # generating random data from a probability distribution ------------------
 
@@ -149,35 +140,45 @@ mod <- lm(y ~ x)
 summary(mod)
 abline(mod)
 
-# simulate two-sample t tests to find power
 
-# there is a function for this:
+# Two-sample t tests compare the means of two normally distributed populations. 
+# An appropriate sample size for such a test depends on the hypothesized 
+# difference between the means, the standard deviation of the populations, and 
+# the significance level of our test, and our desired power. Power is simply the
+# probability of correctly rejecting the null hypothesis (no difference between 
+# means) when it is actually false. There is a function in R that allows you to
+# calculate power and sample size for a t-test:
+
+# calculate power for n=20 in each group, an SD=1 and sig level=0.05
 power.t.test(n = 20, delta = 1)
+# calculate sample size for power=0.80, an SD=1 and sig level=0.05
+power.t.test(power = 0.80, delta = 1)
 
-# Let's do a t-test with some sample data
+# Now let's do a t-test with some sample data to estimate power via simulation:
 tout <- t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")
 # note the structure of tout
 str(tout)
 # pull out just the p-value
 tout$p.value
 
-# Now do 1000 t-tests:
+# We can run 1000 t-tests:
 out <- replicate(1000, t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value)
 # count the number of p-values less than 0.05 and divide by 1000 to estimate "power"
 mean(out < 0.05)
 
 
-# simulate two-sample t tests to find sample size
+# We can also use simulation of two-sample t tests to find sample size
 
-power.t.test(delta = 1, power = 0.8)
-
+# define a function called tpower that runs a 1000 t-tests and outputs power
+# given n (sample size in each group):
 tpower <- function(n, N=1000){
   out <- replicate(N, t.test(rnorm(n,5,1),rnorm(n,6,1),alternative = "two.sided")$p.value)
   sum(out < 0.05)/1000
 }
 
+# Now run the tpower function for increasing levels of sample size
 n <- 10:30
-pest <- sapply(n,tpower)
+pest <- sapply(n,tpower) # this may take a moment
 plot(n,pest, type="b")
 abline(h=0.8) # add line for 80% power
 # smallest value n such that power is > 0.80
@@ -212,61 +213,96 @@ summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4]
 
 # now generate 1000 data sets and run the model 100 times
 out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4])
-# percent of times significance achieved
+# percent of times significance achieved (ie, estimated power)
 mean(out < 0.05)
 
 # with our function allowing different n and sd, we can try different settings:
 out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=2)))$coef[3,4])
+# estimate power assuming SD=2 and n=50
 mean(out < 0.05)
 
 out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=200, sd=2)))$coef[3,4])
+# estimated power assuming SD=2 and n=200
 mean(out < 0.05)
 
-# we can also loop through various settings and graph the results.
+# we can also loop through various settings and graph the results. I change 1000
+# to 200 below in the interest of time:
 power <- numeric(length(seq(50,300,by=25)))
 j <- 1
 for(i in seq(50,300,by=25)){
-  out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=i, sd=2)))$coef[3,4])
+  out <- replicate(200,summary(lm(resp ~ age*treat, data=genData(n=i, sd=2)))$coef[3,4])
   power[j] <- mean(out < 0.05)
   j <- j + 1
 }
 # graph the result
-plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power")
+plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
+abline(h=0.8, lty=2)
+
+# Instead of a "for" loop we could do it the R way: write a function and then
+# use sapply.
+powerFun <- function(x){
+  out <- replicate(200,summary(lm(resp ~ age*treat, data=genData(n=x, sd=2)))$coef[3,4])
+  mean(out < 0.05)
+} 
+# Now apply the function seq(50,300,by=25)
+power <- sapply(seq(50,300,by=25), powerFun)
+
+# and again graph the result
+plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
 abline(h=0.8, lty=2)
 
 
 
-# set seed to replicate results; doesn't matter what the "seed" is.
-set.seed(123)
+# sampling data -----------------------------------------------------------
 
-# generating known data or fixed levels
+# In statistics we usually can't measure every member of population. The best we
+# can do is take a sample and then use that sample as a surrogate for the 
+# population of interest. A common example is national election polling. It's 
+# impractical to ask every registered voter who they will vote for. Therefore 
+# pollsters will take a (hopefully random) sample of about 1000 people to draw
+# inferences about how the entire population of registered voters will vote.
 
-rep(c("male","female"), times=4)
-rep(c("male","female"), each=4)
-rep(c("male","female"), length.out=4)
+# R allows us to simulate this kind of random sampling. A basic but powerful 
+# function for this is sample(). The syntax is sample(x, size, replace) where x 
+# is either a vector of one or more elements from which to choose, or a positive
+# integer, size is a non-negative integer giving the number of items to choose, 
+# and replace is a logical setting about whether sampling be with replacement
+# (The default is FALSE).
 
-# Notice these are character class.
-class(rep(c("male","female"), length.out=4))
+# We can use sample to generate the roll of a die
+sample(x=1:6, size=1)
 
-# If we wanted a factor we would need to explicitly declare it a factor
-factor(rep(c("male","female"), each=4))
+# With replicate(), we can simulate the roll of a die 1000 times. The syntax for
+# replicate() is replicate(n, expr) where n is the number of replications and 
+# expr is the expression to replicate. Here we replicate 1000 rolls of a fair
+# die.
+replicate(n=1000, sample(x=1:6, size=1))
 
-# The gl() function can also be used to generate a factor. The basic syntax is 
-# gl(n, k, length, labels), where n is number of levels, k is number of 
-# replications, length is length of result, and labels is a character vector of
-# options factor level names.
+# Using table, we can simulate a 1000 die rolls and tally up the totals
+table(replicate(n=1000,sample(1:6,1)))
 
-# 3 levels repeated twice
-gl(n = 3, k = 2)
+# To simulate rolling two dice, or rolling a die two times, we need to set size
+# = 2 and replace = TRUE. If we don't set replace = TRUE, then we would never
+# roll a pair.
+sample(x=1:6, size=2, replace=T)
 
-# 3 levels repeated twice until filling a vector of size 20
-gl(n = 3, k = 2, length=20)
+# again we can use replicate to simulate rolling two dice a 1000 times. The
+# result is a matrix.
+diceRolls <- replicate(n=1000, sample(x=1:6, size=2, replace = TRUE))
+# First 10 rolls:
+diceRolls[,1:10]
 
-# levels repeated once each until filling a vector of size 20
-gl(n = 3, k = 1, length=20)
+# and then we can summarize the distribution of the sum of the dice:
+table(apply(diceRolls, 2, sum))
 
-# same as previous with labels
-gl(n = 3, k = 1, length=20, labels=c("win","lose","draw"))
+# and graph if we want:
+barplot(table(apply(diceRolls, 2, sum)))
+
+# The sample function also has a prob argument that allows you to assign 
+# unequal probabilities to your items. For example to simulate the flip of a
+# loaded coin, with Tails having probability 0.65:
+sample(c("H","T"),100,replace=TRUE,prob = c(0.35,0.65))
+
 
 
 
