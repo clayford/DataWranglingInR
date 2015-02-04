@@ -30,7 +30,7 @@ library(data.table)
 # the other hand requires you to convert the data frame to a "data table" in
 # order to use data.table functions.
 
-# To create a data table, use the data.table function:
+# To create a data table, use the data.table() function:
 class(allStocks)
 allStocksDT <- data.table(allStocks)
 class(allStocksDT)
@@ -64,14 +64,12 @@ allStocksDT[2,]
 # But trying to extract 3rd column of row 2 produces this:
 allStocksDT[2,3]
 
-# What's going here? It turns out that data table uses indexing brackets much 
-# differently than data frames. The basic arguments within brackets are not row
-# and column numbers but rather "i", "j" and "by".
-
-# The general form is thus DT[i, j, by] where DT is a data table, like 
-# allStocksDT. In words, this translates to "Take DT, subset rows using i, then 
-# calculate j grouped by by". If you're familiar with SQL it may be useful to
-# think of i as WHERE, j as SELECT and by as GROUP BY.
+# What's going on here? It turns out that data table uses indexing brackets much
+# differently than data frames. The basic arguments within brackets are not row 
+# and column numbers but rather "i", "j" and "by". If you're familiar with SQL 
+# it may be useful to think of i as WHERE, j as SELECT and by as GROUP BY. Say
+# you have a data table called DT. In words, DT[i, j, by] translates to "Take
+# DT, subset rows using i, then calculate j grouped by by".
 
 # How to select rows:
 allStocksDT[1:5,]
@@ -125,7 +123,7 @@ allStocksDT[,.(meanOpen = mean(Open), sdOpen = sd(Open)), by = .(Stock)]
 allStocksDT[, .(meanVolume = mean(Volume)), by = .(Month = months(Date), Stock)]
 
 # We defined a new grouping variable called Month and then used it as one of the
-# by variable for which to calculate the means.
+# by variables for which to calculate the means.
 
 # We can use i to limit the calculation to a subset. Here we calculate the mean
 # Volume for per month for bbby:
@@ -220,9 +218,9 @@ allStocksDT
 allStocksDT[, `:=`(Day = weekdays(Date), Volume = comma(Volume))]
 allStocksDT
 
-# Here we're using := like a function, because it is a function! On a side note,
-# just about everything is accomplished by functions in R. Even the "+" sign is
-# a function:
+# Here we're using := like a function, because it is a function. As I've
+# mentioned before in class, just about everything is accomplished by functions
+# in R. Even the "+" sign is a function:
 2+4
 `+`(2,4)
 
@@ -233,8 +231,9 @@ allStocksDT
 allStocksDT[, `:=`(Day = NULL, Volume = extract_numeric(Volume))]
 allStocksDT
 
-# we can combine := with i and j. Here we subset where month equals January,
-# then calculate the total Volume per Stock.
+# we can combine := with i and j. Here we subset where month equals January, 
+# then calculate the total Volume per Stock. In other words, we calculate the
+# total volume per stock for January.
 allStocksDT[months(Date)=="January", Total := sum(Volume), by = .(Stock)]
 
 # If we print the data table, we'll see NA for Total. That's because the head
@@ -292,6 +291,8 @@ rm(BattingDT)
 # think of them as a factor. Let's see how to set a key and what we can do with
 # it.
 
+# First let's introduce the tables() function, not to be confused with the base
+# R table() function. It will display all data tables currently in memory.
 tables()
 # Notice the key column is empty
 
@@ -304,7 +305,8 @@ allStocksDT
 # The data table is now sorted automatically by Stock. Also notice we didn't
 # have to use an assignment operator "<-" above.
 
-# see just the bbby stocks
+# Subsetting by a key is quite easy. Just state a level in the beackets. Here we
+# view just the bbby stocks
 allStocksDT["bbby"]
 
 # A key can consist of multiple columns.

@@ -348,9 +348,11 @@ arrests %>%
 # add a variable to weather for cumulative precipitation using cumsum(), a base
 # R function.
 weather <- weather %>%
-  mutate(cumPrecip = cumsum(weather$PrecipitationIn))
+  mutate(cumPrecip = cumsum(PrecipitationIn))
+weather$cumPrecip[1:10]
 # quick plot of cumulative precipitation over 2013
 plot(cumPrecip ~ Date, data=weather, type="l")
+abline(h = seq(10,40,10), lty=3, col="grey")
 
 # calculate mean max temperature per month
 weather %>%
@@ -358,9 +360,10 @@ weather %>%
   summarize(meanMaxTemp=round(mean(Max.TemperatureF)))
 
 # Notice the months are sorted alphabetically. An easy way to fix is to use the 
-# month() function in the lubridate package (different from the base R months()
-# function.) Notice below we can also create a name for our grouping variable in
-# the group_by() function:
+# month() function in the lubridate package (different from the base R months() 
+# function.) label=TRUE displays month as a character string, but sorting done
+# on number of month. Notice below we can also create a name for our grouping
+# variable in the group_by() function:
 library(lubridate)
 weather %>%
   group_by(Month=month(Date, label=T)) %>%
@@ -431,7 +434,8 @@ head(choro)[1:4,1:8]
 # now plot the map using ggplot
 ggplot(choro, aes(x=long, y=lat, group=group, fill=MOV2)) +
   geom_polygon(color="black") +
-  scale_fill_gradient2(low="red", mid="white", high="blue")
+  scale_fill_gradient2(low="red", mid="white", high="blue", labels=comma) +
+  labs(fill="Margin of Vote")
 
 # Notice how ggplot and dplyr are similar in the way they allow you to chain 
 # together commands. This is because they were both designed by the same person,
