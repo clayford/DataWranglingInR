@@ -50,6 +50,11 @@ dim(allStocksDT)
 str(allStocksDT)
 levels(allStocksDT$Stock)
 
+# Like data.frame(), we can alsu use data.table() to "manually" create data
+# tables:
+DT <- data.table(x=1:5, y=pi/1:5, z=letters[1:5])
+DT
+
 # Like dplyr's tbl_df() function, data.table has the effect of supressing the
 # printing of entire data frames to the console.
 allStocksDT
@@ -59,7 +64,7 @@ allStocksDT
 
 # How about indexing? Does that work the same? Not quite.
 # We can still extract, say, row 2:
-allStocksDT[2,]
+allStocksDT[1,]
 
 # But trying to extract 3rd column of row 2 produces this:
 allStocksDT[2,3]
@@ -268,6 +273,17 @@ ans2
 
 # Considerably faster!
 
+# How about dplyr?
+library(dplyr)
+system.time(
+ans3 <- DT %>%
+  group_by(x) %>%
+  summarise(mean(y))
+)
+ans3
+
+# just as fast.
+
 # Remember the baseball example from the dplyr lecture? Here it is again with dplyr:
 library(Lahman)
 
@@ -294,23 +310,23 @@ rm(BattingDT)
 # First let's introduce the tables() function, not to be confused with the base
 # R table() function. It will display all data tables currently in memory.
 tables()
-# Notice the key column is empty
 
+# Notice the key column is empty
 setkey(allStocksDT, Stock)
 tables()
-
 # Now Stock is the key
+
 allStocksDT
 
-# The data table is now sorted automatically by Stock. Also notice we didn't
-# have to use an assignment operator "<-" above.
+# The data table is now sorted automatically by Stock. Also notice we didn't 
+# have to use an assignment operator "<-" above. The key assignment was made
+# directly to the data table and saved.
 
-# Subsetting by a key is quite easy. Just state a level in the beackets. Here we
-# view just the bbby stocks
+# Having a key can make for east subsetting. Just state a level in the brackets.
+# Here we view just the bbby stocks
 allStocksDT["bbby"]
 
 # A key can consist of multiple columns.
-
 head(airquality)
 airqualityDT <- data.table(airquality)
 
@@ -322,3 +338,23 @@ airqualityDT[.(5,2)]
 # see record for June 21
 airqualityDT[.(6,21)]
 
+# Keys can be set when creating data tables using the key argument. Just make
+# sure the column name is in quotes.
+weatherDT <- data.table(weather, key="Events")
+# See records for Events="Snow" along with the Date and Mean Temperature
+weatherDT["Snow", Date, Mean.TemperatureF]
+
+
+
+# Conclusion --------------------------------------------------------------
+
+# This was merely an intro to data.table. There is much more to the package, 
+# including a number of utility and convenience functions. The authors of the 
+# package appear to be very passionate and helpful with respect to data.table. 
+# The examples and documentation are thorough, thoughtful and well-written. The 
+# same can be said of the dplyr package. Their vignettes have set the standard
+# for educating new users.
+
+# Instead of choosing between dplyr and data.table, I would try to learn both. 
+# It will make you flexible, adaptable and a more knowledgable and more informed
+# R user.

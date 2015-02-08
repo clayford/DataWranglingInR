@@ -10,31 +10,56 @@
 # play around with. Other times we want to generate data similar to what we 
 # expect to collect to see if our proposed analysis works as expected. Or we 
 # want to simulate data collection many times over in order to estimate a 
-# statistical measure such as standard error. R has excellent facilities for
-# generating random data.
+# statistical measure such as standard error. 
 
 
 # generating fixed levels -------------------------------------------------
 
 # Often generating data means creating a series of fixed levels, such as 100 
 # males and 100 females. The rep() function can be useful for this. Below we
-# create 100 each of "M" and "F":
-rep(c("M","F"), each=100)
-# Note this generated a character vector. To use as a "factor", we would need to
-# wrap in the factor() function.
+# replicate 10 each of "M" and "F":
+rep(c("M","F"), each=10)
 
-# Perhaps a better function for creating factors is the gl() function. gl = 
-# "generate levels". Below we generate a factor with 2 levels of 100 each and
+# we can also specify number of times the vector is replicated:
+rep(c("M","F"), times=10)
+
+# finally we can replicate until a certain length is achieved
+rep(c("M","F"), length.out = 15)
+
+# Notice that all these generated a character vector. To use as a "factor", we
+# would need to wrap it in the factor() function.
+factor(rep(c("M","F"), each=10))
+
+# A function specifically for creating factors is the gl() function. gl = 
+# "generate levels". Below we generate a factor with 2 levels of 10 each and 
 # labels of "M" and "F". Notice the result is a factor.
-gl(n = 2, k = 100, labels = c("M","F"))
+gl(n = 2, k = 10, labels = c("M","F"))
+
+# Recall that for categorical data, factors are more efficient for memory than
+# character.
+
+# letters of English alphabet replicated 10,000 times, stored as character:
+chr1 <- rep(letters, times=1e5)
+format(object.size(chr1), units="Mb")
+# letters of English alphabet replicated 10,000 times, stored as factor:
+chr2 <- factor(rep(letters, times=1e5))
+format(object.size(chr2), units="Mb")
+
+rm(chr1, chr2)
 
 # A more common occurence is combinations of fixed levels, say gender, 
-# treatment, and race. A function that helps create every combination of levels 
-# is expand.grid(). Below we generate every combination the levels provided for
-# gender, treatment and race:
+# education, and status. A function that helps create every combination of 
+# levels is expand.grid(). Below we generate every combination of the levels
+# provided for gender, education, and status:
 expand.grid(gender=c("M","F"), 
-            treatmen=c("Treat","Placebo"), 
-            race=c("White","Black","Asian","Multiracial"))
+            education=c("HS","College","Advanced"), 
+            status=c("Single","Married","Divorced","Widowed"))
+
+# Notice that creates a data frame that we can save:
+DF <- expand.grid(gender=c("M","F"), 
+            education=c("HS","College","Advanced"), 
+            status=c("Single","Married","Divorced","Widowed"))
+class(DF)
 
 # Create a experimental design plan and write out to csv file.
 
@@ -44,47 +69,124 @@ expand.grid(gender=c("M","F"),
 # > 3*3*3*8 
 # [1] 216
 
-schedule <- expand.grid(thrower=c("Clay","John","Mark"),
-            paper=c(15,20,22),
+schedule <- expand.grid(thrower=c("Clay","Rod","Frank"),
+            paper=c(18, 20, 24),
             design=c("a","b","c"),
             rep=1:8)
-# randomize and drop rep:
+
+# Randomize and drop the rep column. The sample(nrow(schedule)) code scrambles 
+# the numbers 1 through 216, which I then use to randomly shuffle the schedule
+# of throws.
 schedule <- schedule[sample(nrow(schedule)),1:3]
-# output to csv file for logging data
+# output to csv file for logging "distance flown" data
 write.csv(schedule, file="throwLog.csv", row.names=FALSE)
+
+
+# generating numerical sequences ------------------------------------------
+
+# The seq() function allows you to generate sequences of numbers:
+seq(from = 1, to = 10, by = 2)
+seq(1, 10, 0.2)
+
+# The seq() function has a length.out argument that allows you to specify the 
+# size of the vector you want to create. It automatically calculates the
+# increment.
+seq(1, 10, length.out = 30)
+
+# The colon operator(:) also allows you to generate regular sequences in steps
+# of 1.
+1:10
+10:-10
+
+# When used with factors, the colon operator generates interactions:
+f1 <- gl(n = 2, k = 3); f1
+f2 <- gl(n = 3, k = 2); f2
+f1:f2 # a factor, the "cross"  f1 x f2
+
+# Two related functions are seq_along() and seq_len(). seq_along() returns the
+# indices of a vector while seq_len(n) returns an integer vector of 1:n.
+seq_along(100:120)
+seq_len(10)
+ 
 
 # generating random data from a probability distribution ------------------
 
-# Theoretical probability distributions are often used to model distributions of
-# data in real life. For example, let's look at the airquality dataset that
-# comes with R:
-head(airquality)
+# A central idea in inferential statistics is that the distribution of data can 
+# often be approximated by a theoretical distribution. R provides functions for 
+# working with several well-known theoretical distributions, including the 
+# ability to generate data from those distributions. One we've used several 
+# times in the lectures is the rnorm() function which generates data from a
+# Normal distribution.
 
-# How are the Temperature values distributed? We can use the hist() function to
-# get an idea:
+# Example: generate data from a Normally distributed pop'n with a mean of 150
+# and a standard deviation of 10.
+ex <- rnorm(n = 100, mean = 150, sd = 10)
+mean(ex); sd(ex)
+
+# In R, the functions for theoretical distributions take the form of dxxx, pxxx,
+# qxxx and rxxx, respectively. dxxx is for the density/mass function, pxxx is 
+# for the cumulative distribution function, qxxx is for the quantile function, 
+# and rxxx is for random variate generation. For this lecture we're mostly
+# interested in the rxxx variety, but let's briefly review the others. NOTE: see
+# help(Distributions) for all distributions available with base R.
+
+# dxxx - density/mass function
+# This is basically the formula that draws the distribution.
+# Here we use dnorm for the standard Normal distribution: N(0,1).
+X <- seq(-3,3,0.01)
+Y <- dnorm(X)
+plot(X,Y,type="l")
+
+# We can do the same with a chi-square distribution with 3 degrees of freedom.
+X <- seq(0,10,0.01)
+Y <- dchisq(X,df = 3)
+plot(X,Y,type="l")
+
+# For discrete distributions such as the Binomial, you usually draw histograms
+# instead of curves since we're dealing with discrete values.
+X <- seq(0,10)
+Y <- dbinom(X,size = 10,prob = 0.35)
+plot(X,Y,type="h")
+
+# pxxx - cumulative distribution function 
+# This is basically the probability of a value being less than (or equal to) a 
+# certain point in the theoretical distribution.
+
+# Say we have a N(100,5); 
+# Probability of drawing a value less than 95:
+pnorm(q = 95, mean = 100, sd = 5)
+# Probability of drawing a value greater than 95:
+pnorm(q = 95, mean = 100, sd = 5, lower.tail = FALSE)
+# or 
+1 - pnorm(q = 95, mean = 100, sd = 5)
+
+# Same idea with a discrete distribution, except we say less than or equal to. 
+# Binomial distribution with 10 trials and probability of 0.35: b(10,0.35) 
+# Probability of seeing 4 or fewer "successes" out of 10 trials:
+pbinom(q = 4, size = 10, prob = 0.35)
+
+
+# qxxx - the quantile function
+# This is basically the opposite of pxxx.
+# This returns the point (or the quantile) for a given probability.
+
+# Say we have a N(100,5); 
+# In what quantile can we expect to see values 15% of the time:
+qnorm(p = 0.15, mean = 100, sd = 5)
+
+# Say we have a b(10,0.35);
+# How many successes can we expect to see 70% of the time:
+qbinom(p = 0.7, size = 10, prob = 0.35)
+
+# rxxx - random variate generation.
+# Draw random values from a theoretical distribution.
+
+
+
+# Let's look at the distribution of the Temp column from the airquality data
+# set using the hist() function.
 hist(airquality$Temp)
-
-# We can think of the ranges on the x-axis as bins and the bars representing 
-# items stacked in the bins. Notice the y axis says "Frequency". We can also 
-# think of the bars as representing proportions such that they all sum to 1 or 
-# 100%. We can have R create the histogram with this representation using
-# freq=FALSE.
-hist(airquality$Temp, freq=FALSE)
-
-# Notice the y-axis has changed to Density. To calculate the approximate 
-# proportion of values in, say, the 65-70 bin, multiply the bin width by the bar
-# height. We can do this by saving the histogram to an object:
-ho <- hist(airquality$Temp, freq=FALSE)
-
-# investigate the object. Notice it contains the bin breaks ("breaks") and bar
-# heights, ("density"):
-str(ho)
-
-# we can calculate the proportions exactly as follows:
-diff(ho$breaks) * ho$density
-
-# notice they sum to 1
-sum(diff(ho$breaks) * ho$density)
+hist(rnorm(length(airquality$Temp), mean(airquality$Temp), sd(airquality$Temp)))
 
 # Histograms with bars as proportions can be thought of as an empirical
 # distribution. It turns out that many such distributions can be modelled or
@@ -93,26 +195,8 @@ sum(diff(ho$breaks) * ho$density)
 x <- 55:100
 lines(x, y = dnorm(x, mean = mean(airquality$Temp), sd=sd(airquality$Temp)))
 
-# We see the empirical distribution of Temps is pretty close to a theoretical 
-# Normal distribution with mean and standard deviation equal to the mean and
-# standard deviation of the Temps data.
 
-# The lines() function plots lines by plugging the values in x into the 
-# expression in y. The mathematical expression for a normal curve can be called 
-# with the dnorm() function. It's arguments are x (numbers on the x-axis), mean 
-# and standard deviation. The mean is the value at the hump and the standard 
-# deviation is the distance from the mean to the inflection point on the graph.
-# Formally we say the normal distribution has two parameters.
 
-# R lets us easily explore the Normal distribution
-plot(x=seq(1,20,length.out = 200), y = seq(0,0.5, length.out = 200), 
-     type="n", xlab="", ylab="")
-x <- seq(1,20,length.out = 200)
-lines(x, y = dnorm(x, mean = 10, sd=3), col=1)
-lines(x, y = dnorm(x, mean = 10, sd=2), col=2)
-lines(x, y = dnorm(x, mean = 15, sd=2), col=3)
-lines(x, y = dnorm(x, mean = 15, sd=1), col=4)
-legend("topleft",legend = c("N(10,3)","N(10,2)","N(15,2)","N(15,1)"),col = 1:4, lty=1)
 
 # Now that we know a little about the normal distribution, let's explore how we 
 # can randomly generate data from it. Using the rnorm() function, we can 
@@ -363,3 +447,8 @@ plot(5:50,se,xlab="N",ylab="SE")
 
 # I'm not sure what this is useful for, but I like it.
 mapply(seq, from=1:10, to=11:20)
+
+
+
+x <- rep(1:2, 4)
+ifelse(x == 1, rnorm(4,100), rnorm(4))

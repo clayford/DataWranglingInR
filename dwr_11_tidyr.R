@@ -34,11 +34,12 @@ library(tidyr)
 
 # Syntax: gather(data, key, value, columns to gather) where data is your data 
 # frame, key is the name of the new key column, value is the name of the new 
-# value column, and the last part is names or numeric indexes if columns to
+# value column, and the last part is names or numeric indeces of columns to
 # collapse.
 
+# Let's make some fake data on three stocks: X, Y and Z.
 stocks <- data.frame(
-  time = as.Date('2015-01-01') + 0:9,
+  time = as.Date('2015-01-01') + 0:9, # 10 dates: 2015-01-01 - 2015-01-10
   X = round(rnorm(10, 15, 1),2),
   Y = round(rnorm(10, 20, 2),2),
   Z = round(rnorm(10, 30, 4),2)
@@ -59,20 +60,35 @@ melt(stocks, id.vars = "time", variable.name = "stock", value.name = "price")
 # Use gather on the popVa data. Let's tidy the data such that there is a
 # column indicating the census count and a column for population.
 popVaT <- gather(popVa, census, pop, c(rescen42010:respop72012))
-head(popVaT)
+head(popVaT[order(popVaT$city),])
+# dimensions before gathering
+dim(popVa)
+# dimensions after gathering
+dim(popVaT)
 
 # Use gather() on Anscombe's data that comes with R. (See 
 # http://en.wikipedia.org/wiki/Anscombe%27s_quartet for more information.)
 
 anscombe
+# x1 goes with y1, x2 with y2, etc.
+
 # I'd like to tidy up the data set such that there is one column for each 
 # variable and each observation is a row. There are three variables: x, y, and 
 # group. A single observation is an x,y pair with group indicator (1,2,3 or 4).
 
+# like this:
+#   group  x     y
+#       1 10  8.04
+#       1  8  6.95
+#       1 13  7.58
+# ....
+
 # gather just the x columns
 tmpx <- gather(anscombe[,1:4], group, x)
+head(tmpx)
 # gather just the y columns
 tmpy <- gather(anscombe[,-c(1:4)], group, y)
+head(tmpy)
 # drop the group column in y since x already has it.
 tmpy$group <- NULL
 # now combine tmpx and tmpy into a single data frame
@@ -88,12 +104,12 @@ anscombeT
 # Summary statistics by group:
 library(dplyr)
 anscombeT %>% group_by(group) %>% 
-  summarise(xmean=mean(x), ymean=mean(y),
-            xsd=sd(x), ysd=sd(y),
-            gCorr=cor(x,y))
+  summarise(meanx=mean(x), meany=round(mean(y),2),
+            sdx=round(sd(x),2), sdy=round(sd(y),2),
+            gCorr=round(cor(x,y),2))
 # linear regression by group
 for(i in 1:4){
-  print(coef(lm(y ~ x, data=anscombeT, subset= group==i)))
+  print(round(coef(lm(y ~ x, data=anscombeT, subset= group==i)),2))
 }
 # scatterplots by group
 library(ggplot2)
