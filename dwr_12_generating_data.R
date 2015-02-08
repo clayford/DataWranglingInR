@@ -225,32 +225,51 @@ lines(X,Y,type = "l")
 
 # Generating data from population models ----------------------------------
 
+# When doing things like linear modeling (regression) we're essentially trying 
+# to determine the mathematical process that gave rise to the data. For example,
+# in simple linear regression we postulate the data came from a model that 
+# produces a straight line with random errors that come from a Normal
+# distribution with mean 0 and some finite standard deviation.
 
+# R allows us to easily create such models and use them to generate data.
 
-# In simple linear regression we assume errors are normally distributed with 
-# mean = 0 and some finite standard deviation. We can use rnorm() to generate 
-# random errors and hence reverse engineer data suitable for simple linear
-# regression:
+# Example: Simple linear regression
+
+# independent variable
 x <- seq(10,15,length.out = 100)
-y <- 10 + 5*x + rnorm(100,sd=4)
+
+# population parameters
+intercept <- 10
+slope <- 5
+sigma <- 4
+
+# dependent variable
+y <- intercept + slope*x + rnorm(100,sd=sigma)
 plot(x,y)
+
+# Of course then simple linear regression should work well on this data and
+# closely estimate our population parameters:
 mod <- lm(y ~ x)
 summary(mod)
 abline(mod)
 
 
+# Estimating Power --------------------------------------------------------
+
+
 # Two-sample t tests compare the means of two normally distributed populations. 
 # An appropriate sample size for such a test depends on the hypothesized 
-# difference between the means, the standard deviation of the populations, and 
-# the significance level of our test, and our desired power. Power is simply the
+# difference between the means, the standard deviation of the populations, the
+# significance level of our test, and our desired power. Power is simply the 
 # probability of correctly rejecting the null hypothesis (no difference between 
-# means) when it is actually false. There is a function in R that allows you to
+# means) when it is actually false. There is a function in R that allows you to 
 # calculate power and sample size for a t-test:
 
 # calculate power for n=20 in each group, an SD=1 and sig level=0.05
 power.t.test(n = 20, delta = 1)
 # calculate sample size for power=0.80, an SD=1 and sig level=0.05
 power.t.test(power = 0.80, delta = 1)
+# Always round n to next largest integer
 
 # Now let's do a t-test with some sample data to estimate power via simulation:
 tout <- t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")
@@ -259,7 +278,16 @@ str(tout)
 # pull out just the p-value
 tout$p.value
 
-# We can run 1000 t-tests:
+# We can do all that in one shot:
+t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value
+
+# Let's run 1000 such t-tests using the replicate function. The replicate() 
+# function allows to replicate an expression as many times as you specify. For 
+# example, to replicate 100 times sampling 10 items from a standard normal
+# distribution and taking the median:
+replicate(25, median(rnorm(10)))
+
+# replciate t-tests:
 out <- replicate(1000, t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value)
 # count the number of p-values less than 0.05 and divide by 1000 to estimate "power"
 mean(out < 0.05)
