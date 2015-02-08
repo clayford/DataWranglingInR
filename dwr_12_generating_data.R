@@ -178,40 +178,54 @@ qnorm(p = 0.15, mean = 100, sd = 5)
 # How many successes can we expect to see 70% of the time:
 qbinom(p = 0.7, size = 10, prob = 0.35)
 
+# qnorm can be helpful when shading in areas under curves
+# Normal curve for N(100,5)
+X <- seq(85,115,0.01)
+Y <- dnorm(X, mean = 100, sd = 5)
+plot(X,Y,type="l")
+# quantile for p=0.15
+q <- qnorm(p = 0.15, mean = 100, sd = 5)
+# create vectors of x,y coordinates for polygon function;
+# rev() reverses vectors: rev(1:3) = 3 2 1 
+xx <- c(seq(85,q,length.out = 100),rev(seq(85,q,length.out = 100)))
+yy <- c(rep(0,100),dnorm(rev(seq(85,q,length.out = 100)), mean = 100, sd = 5))
+# use polygon to fill area under curve
+polygon(x=xx,y=yy,col="grey")
+# annotate graph
+text(x = 93, y = 0.005,labels = pnorm(q,mean = 100,sd = 5))
+text(x = q, y = 0.06, labels = round(q,2))
+
+
 # rxxx - random variate generation.
 # Draw random values from a theoretical distribution.
+# 10 random draws from N(100,5)
+rnorm(n = 10, mean = 100, sd = 5)
+
+# 10 random draws from b(1,0.5)
+# AKA, 10 coin flips
+rbinom(n = 10, size = 1, prob = 0.5)
+
+# 10 random draws from b(10,0.5)
+# AKA, 10 results of 10 coin flips
+rbinom(n = 10, size = 10, prob = 0.5)
+
+# A demonstration of the Central Limit Theorem. 
+
+# The Central Limit Theorem states that the sum of a large number of independent
+# random variables will be approximately normally distributed almost regardless
+# of their individual distributions.
+
+clt  <- rexp(n = 1e5, rate = 1) + rbinom(1e5,10,0.4) + rchisq(1e5,df = 6) + 
+  rnorm(1e5,12,12) + rpois(1e5,lambda = 3) + rt(1e5,df = 7)
+hist(clt, freq=FALSE)
+X <- seq(min(clt),max(clt),length.out = 500)
+Y <- dnorm(X, mean = mean(clt), sd = sd(clt))
+lines(X,Y,type = "l")
 
 
-
-# Let's look at the distribution of the Temp column from the airquality data
-# set using the hist() function.
-hist(airquality$Temp)
-hist(rnorm(length(airquality$Temp), mean(airquality$Temp), sd(airquality$Temp)))
-
-# Histograms with bars as proportions can be thought of as an empirical
-# distribution. It turns out that many such distributions can be modelled or
-# approximated with theoretical distributions. Below is one way to superimpose a
-# theoretical distribution over an empirical distribution:
-x <- 55:100
-lines(x, y = dnorm(x, mean = mean(airquality$Temp), sd=sd(airquality$Temp)))
+# Generating data from population models ----------------------------------
 
 
-
-
-# Now that we know a little about the normal distribution, let's explore how we 
-# can randomly generate data from it. Using the rnorm() function, we can 
-# generate values from a Normal distribution of our choosing. For instance, 
-# maybe I want some fake data representing the weights of male college freshmen.
-# It's not a stretch to assume these data would be normally distributed, say 
-# with a mean of 175 and a standard deviation of 15. We can generate a 100
-# values from this hypothetical distribution as follows:
-weights <- rnorm(n = 1000, mean = 175, sd = 15)
-head(weights)
-# The histogram of this data should look normal:
-hist(weights, freq=F)
-# It does. How does the theoretical normal curve fit?
-x <- seq(120, 220, length.out = 200)
-lines(x, y=dnorm(x, 175, 15))
 
 # In simple linear regression we assume errors are normally distributed with 
 # mean = 0 and some finite standard deviation. We can use rnorm() to generate 
@@ -449,6 +463,3 @@ plot(5:50,se,xlab="N",ylab="SE")
 mapply(seq, from=1:10, to=11:20)
 
 
-
-x <- rep(1:2, 4)
-ifelse(x == 1, rnorm(4,100), rnorm(4))
