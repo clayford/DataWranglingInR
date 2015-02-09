@@ -283,9 +283,9 @@ t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value
 
 # Let's run 1000 such t-tests using the replicate function. The replicate() 
 # function allows to replicate an expression as many times as you specify. For 
-# example, to replicate 100 times sampling 10 items from a standard normal
-# distribution and taking the median:
-replicate(25, median(rnorm(10)))
+# example, to replicate 100 times sampling 10 items from a N(100,5) distribution
+# and taking the mean:
+replicate(25, median(rnorm(10,100,5)))
 
 # replciate t-tests:
 out <- replicate(1000, t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value)
@@ -301,6 +301,9 @@ tpower <- function(n, N=1000){
   out <- replicate(N, t.test(rnorm(n,5,1),rnorm(n,6,1),alternative = "two.sided")$p.value)
   sum(out < 0.05)/1000
 }
+
+# Estimated power with n = 5 
+tpower(5)
 
 # Now run the tpower function for increasing levels of sample size
 n <- 10:30
@@ -329,7 +332,7 @@ genData <- function(n,sd){
   data.frame(resp,age, treat)
 }
 # test the function
-genData(n=50, sd=1)
+head(genData(n=50, sd=1))
 
 # now use the function in the linear model function and call summary();
 # summary() produces a list with a matrix element called "coefficient"; the 3rd
@@ -337,24 +340,25 @@ genData(n=50, sd=1)
 # coeffient.
 summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4]
 
-# now generate 1000 data sets and run the model 100 times
+# now generate 1000 data sets and run the model 1000 times
 out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4])
 # percent of times significance achieved (ie, estimated power)
 mean(out < 0.05)
 
 # with our function allowing different n and sd, we can try different settings:
-out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=2)))$coef[3,4])
 # estimate power assuming SD=2 and n=50
+out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=2)))$coef[3,4])
 mean(out < 0.05)
 
-out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=200, sd=2)))$coef[3,4])
 # estimated power assuming SD=2 and n=200
+out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=200, sd=2)))$coef[3,4])
 mean(out < 0.05)
 
 # we can also loop through various settings and graph the results. I change 1000
 # to 200 below in the interest of time:
 power <- numeric(length(seq(50,300,by=25)))
 j <- 1
+# loop through sample sizes of 50 to 300 in increments of 25
 for(i in seq(50,300,by=25)){
   out <- replicate(200,summary(lm(resp ~ age*treat, data=genData(n=i, sd=2)))$coef[3,4])
   power[j] <- mean(out < 0.05)
@@ -381,11 +385,11 @@ abline(h=0.8, lty=2)
 
 # sampling data -----------------------------------------------------------
 
-# In statistics we usually can't measure every member of population. The best we
-# can do is take a sample and then use that sample as a surrogate for the 
+# In statistics we usually can't measure every member of a population. The best
+# we can do is take a sample and then use that sample as a surrogate for the 
 # population of interest. A common example is national election polling. It's 
 # impractical to ask every registered voter who they will vote for. Therefore 
-# pollsters will take a (hopefully random) sample of about 1000 people to draw
+# pollsters will take a (hopefully random) sample of about 1000 people to draw 
 # inferences about how the entire population of registered voters will vote.
 
 # R allows us to simulate this kind of random sampling. A basic but powerful 
@@ -398,23 +402,21 @@ abline(h=0.8, lty=2)
 # We can use sample to generate the roll of a die
 sample(x=1:6, size=1)
 
-# With replicate(), we can simulate the roll of a die 1000 times. The syntax for
-# replicate() is replicate(n, expr) where n is the number of replications and 
-# expr is the expression to replicate. Here we replicate 1000 rolls of a fair
-# die.
-replicate(n=1000, sample(x=1:6, size=1))
+# With replicate(), we can simulate the roll of a die 100 times. Here we
+# replicate 100 rolls of a fair die.
+replicate(n=100, sample(x=1:6, size=1))
 
 # Using table, we can simulate a 1000 die rolls and tally up the totals
-table(replicate(n=1000,sample(1:6,1)))
+table(replicate(n=100,sample(1:6,1)))
 
 # To simulate rolling two dice, or rolling a die two times, we need to set size
 # = 2 and replace = TRUE. If we don't set replace = TRUE, then we would never
 # roll a pair.
 sample(x=1:6, size=2, replace=T)
 
-# again we can use replicate to simulate rolling two dice a 1000 times. The
+# again we can use replicate to simulate rolling two dice a 100 times. The
 # result is a matrix.
-diceRolls <- replicate(n=1000, sample(x=1:6, size=2, replace = TRUE))
+diceRolls <- replicate(n=100, sample(x=1:6, size=2, replace = TRUE))
 # First 10 rolls:
 diceRolls[,1:10]
 
@@ -429,7 +431,58 @@ barplot(table(apply(diceRolls, 2, sum)))
 # loaded coin, with Tails having probability 0.65:
 sample(c("H","T"),100,replace=TRUE,prob = c(0.35,0.65))
 
+# The sample() function is useful for creating test and training sets when it
+# comes to modeling. 
 
+# Recall our tree data:
+trees <- read.csv("../data/139_treecores_rings.txt")
+plot(DCH.cm. ~ DBH.cm., data=trees)
+
+# It might be nice to only have to measure DBH since it's so highly correlated 
+# with DCH. Let's say we're interested in developing a model for predicing DCH
+# given DBH.
+
+mod1 <- lm(DCH.cm. ~ DBH.cm., data=trees)
+summary(mod1)
+# residual standard error (RSE) gives you an idea of how well the model
+# predicts.
+summary(mod1)$sigma
+
+# What if we remove our outlier?
+mod2 <- lm(DCH.cm. ~ DBH.cm., data=trees, subset= DBH.cm.<100)
+summary(mod2)$sigma
+
+# That's one extremely influential observation! But our RSE is still overly 
+# optimistic since it's tested with the same data used to build the model. So we
+# can split the data into test and training sets. Build the model with the 
+# training data, evaluate performance with the test data.
+
+# we can use the sample function to randomly sample row numbers from the data
+# frame to create training and test sets. First we remove the outlier.
+trees2 <- subset(trees, DBH.cm.<100)
+
+# Now we generate training data by simply generating random row numbers in the
+# range of 1 to nrow(trees2)
+train <- sample(nrow(trees2), size = nrow(trees2)%/%2)
+
+# fit model with training data
+modTrain <- lm(DCH.cm. ~ DBH.cm., data=trees2, subset=train)
+# predict model with test data
+p <- predict(modTrain, newdata = trees2[-train,])
+# calculate RSE
+sqrt(sum((trees2$DCH.cm.[-train] - p)^2)/summary(modTrain)$df[2])
+
+# It's a little higher and perhaps a better estimate of true prediction error.
+
+# We can also do something called cross validation that breaks data into, say, 
+# 10 sets, fits the model with 9 and then tests with the one held out. And then 
+# does this for each set and then averages the error. The cv.glm() function in 
+# the boot package can do this for us. It just requires to fit a model with
+# glm() instead of lm().
+
+library(boot)
+glm1 <- glm(DCH.cm. ~ DBH.cm., data=trees2)
+sqrt(cv.glm(trees2, glm1, K=10)$delta[1])
 
 
 # Bootstrapping -----------------------------------------------------------
@@ -450,11 +503,8 @@ sample(c("H","T"),100,replace=TRUE,prob = c(0.35,0.65))
 # When done we calculate the standard deviation of the B statistics to estimate
 # the standard error of the sampling distribution.
 
-# Recall our tree data:
-trees <- read.csv("139_treecores_rings.txt")
-
-# The ratio of the mean diameter at breast height to the mean diameter at core
-# height is easily calculated:
+# Let's again look at our tree data. The ratio of the mean diameter at breast
+# height to the mean diameter at core height is easily calculated:
 mean(trees$DBH.cm./trees$DCH.cm.)
 
 # But how accurate is this estimate? That's what the standard error tells us. 
@@ -479,15 +529,5 @@ bout2 <- boot(trees, bootRatio, 999)
 boot.ci(bout2, type = "perc")
 
 
-# mapply can also be used to apply varying argument levels to function.
-# Generate random normal samples of sizes ranging from 5:50
-outn <- mapply(rnorm, n=5:50, mean=10, sd=5)
-# then use sapply to find the standard error
-se <- sapply(outn, function(x)sd(x)/sqrt(length(x)))
-# and plot standard error versus sample size to see the decreasing trend.
-plot(5:50,se,xlab="N",ylab="SE")
-
-# I'm not sure what this is useful for, but I like it.
-mapply(seq, from=1:10, to=11:20)
 
 
