@@ -15,8 +15,8 @@
 
 # generating fixed levels -------------------------------------------------
 
-# Often generating data means creating a series of fixed levels, such as 100 
-# males and 100 females. The rep() function can be useful for this. Below we
+# Often generating data means creating a series of fixed levels, such as 10 
+# males and 10 females. The rep() function can be useful for this. Below we
 # replicate 10 each of "M" and "F":
 rep(c("M","F"), each=10)
 
@@ -25,6 +25,9 @@ rep(c("M","F"), times=10)
 
 # finally we can replicate until a certain length is achieved
 rep(c("M","F"), length.out = 15)
+# or just length, for short
+rep(c("M","F"), length = 15)
+
 
 # Notice that all these generated a character vector. To use as a "factor", we
 # would need to wrap it in the factor() function.
@@ -38,11 +41,11 @@ gl(n = 2, k = 10, labels = c("M","F"))
 # Recall that for categorical data, factors are more efficient for memory than
 # character.
 
-# letters of English alphabet replicated 10,000 times, stored as character:
-chr1 <- rep(letters, times=1e5)
+# names of US states replicated 10,000 times, stored as character:
+chr1 <- rep(state.name, times=1e5)
 format(object.size(chr1), units="Mb")
-# letters of English alphabet replicated 10,000 times, stored as factor:
-chr2 <- factor(rep(letters, times=1e5))
+# names of US states replicated 10,000 times, stored as factor:
+chr2 <- factor(rep(state.name, times=1e5))
 format(object.size(chr2), units="Mb")
 
 rm(chr1, chr2)
@@ -59,6 +62,7 @@ expand.grid(gender=c("M","F"),
 DF <- expand.grid(gender=c("M","F"), 
             education=c("HS","College","Advanced"), 
             status=c("Single","Married","Divorced","Widowed"))
+str(DF) # factors automatically created
 class(DF)
 
 # Create a experimental design plan and write out to csv file.

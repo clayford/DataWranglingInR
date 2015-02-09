@@ -34,7 +34,7 @@ library(tidyr)
 
 # Syntax: gather(data, key, value, columns to gather) where data is your data 
 # frame, key is the name of the new key column, value is the name of the new 
-# value column, and the last part is names or numeric indeces of columns to
+# value column, and the last part is names or numeric indices of columns to
 # collapse.
 
 # Let's make some fake data on three stocks: X, Y and Z.
@@ -45,6 +45,8 @@ stocks <- data.frame(
   Z = round(rnorm(10, 30, 4),2)
 )
 stocks
+
+# Now let's "gather" the X, Y and Z columns into two columns: stock and price.
 
 # Take data frame stocks, make new variables called stock and price, gathering 
 # all but the time column (ie, X,Y,Z). The former column names X, Y and Z become
@@ -83,10 +85,10 @@ anscombe
 #       1 13  7.58
 # ....
 
-# gather just the x columns
+# gather just the x columns into two columns: group and x
 tmpx <- gather(anscombe[,1:4], group, x)
 head(tmpx)
-# gather just the y columns
+# gather just the y columns into two columns: group and y
 tmpy <- gather(anscombe[,-c(1:4)], group, y)
 head(tmpy)
 # drop the group column in y since x already has it.
@@ -182,28 +184,39 @@ seq_range(mtcars$mpg, 3)
 seq_range(mtcars$mpg, 4)
 seq_range(mtcars$mpg, 5)
 
+# doing the same with the base R functions seq() and range():
+seq(range(mtcars$mpg)[1], range(mtcars$mpg)[2],length=5)
+
+# In fact a quick look at the source code for seq_range reveals that it's simply
+# using those functions:
+seq_range
+
 # seq_range is not quite the same as pretty(), a function in base R:
 seq_range(mtcars$mpg, 5)
 pretty(mtcars$mpg, 5) # makes nice "pretty" intervals
 
-# We can use expand with seq_range to get combinations of a factor with a 
+# We can also use expand with seq_range to get combinations of a factor with a 
 # continuous variable.
 expand(mtcars, cyl, mpg = seq_range(mpg, 5))
 
 
 # extract_numeric ---------------------------------------------------------
 
-# This uses a regular expression to strip all non-numeric character from a
+# This uses a regular expression to strip all non-numeric characters from a
 # string and then coerces the result to a number.
 
 extract_numeric("$1,200.34")
 extract_numeric("-2%")
 
-money <- paste0("$",sprintf("%.2f", round(runif(100,100,200),2))) 
+# Let's generate some dollar amounts. The sprintf function allows us to format 
+# character strings per a specified format. Here we specify the literal part 
+# before the decimal (%) and then two digits of precision after the decimal
+# (2f).
+money <- paste0("$",
+                sprintf("%.2f", round(runif(100,100,200),2))) 
 money
 extract_numeric(money)
 class(extract_numeric(money))
-
 
 # The heuristic is not perfect - it won't fail for things that clearly aren't
 # numbers
@@ -223,9 +236,19 @@ df
 # split column x into two new columns called A and B
 separate(df, x, c("A", "B"))
 
+# Example: separate() can be useful for splitting times into components
+# create a place holder data frame
+dat <- data.frame(i=1:10, time=character(10), stringsAsFactors = F)
+# loop through 10 iterations of logging the system time
+for(i in 1:10){
+  dat[i,2] <- format(Sys.time(), "%H:%M:%OS3") # %OS3 = fractional seconds to 3 places
+  Sys.sleep(0.01) # delay 0.01 seconds
+}
+dat
+separate(dat, time, c("H","M","S","FS"))
 
 # If every row doesn't split into the same number of pieces, use
-# the extra argument to control what happens
+# the "extra" argument to control what happens
 df <- data.frame(x = c("a", "a b", "a b c", NA))
 df
 # merge "b" and "c" into a single element in column b
@@ -233,11 +256,13 @@ separate(df, x, c("y", "z"), extra = "merge")
 # drop c
 separate(df, x, c("y", "z"), extra = "drop")
 
-# If only want to split specified number of times use extra = "merge". For
+# If you only want to split specified number of times use extra = "merge". For 
 # example in the next data frame I only want to split on the first colon:
 df <- data.frame(x = c("x: 123", "y: error: 7"))
 df
-separate(df, x, c("key", "value"), ": ", extra = "merge")
+separate(df, x, c("key", "value"), sep=": ", extra = "merge")
+# Notice the foruth argument: sep. This is where you can define more
+# sophisticated splits based on regular expressions.
 
 
 # unite -------------------------------------------------------------------
@@ -247,9 +272,11 @@ separate(df, x, c("key", "value"), ": ", extra = "merge")
 head(mtcars)
 unite(head(mtcars), vs_am, vs, am)
 
+# Notice the newly defined column replaces what we combined.
+
 # Separate is the complement of unite
 unite_cars <- unite(head(mtcars), vs_am, vs, am) 
-str(unite_cars)
+unite_cars
 separate(unite_cars, vs_am, c("vs", "am"))
 
 
@@ -281,18 +308,21 @@ y
 unnest(y) # turns into a data frame
 
 # same as:
+unlist(y)
 data.frame(x=unlist(y))
 
-# a little more elaborate
-# select the first two rows of each list element
+# a little more elaborate example using the iris data set
+head(iris); str(iris)
+# The following in words: "select all columns except Species, split into groups 
+# by Species, then apply the subsetting bracket function to each group selecting
+# only the first two rows and return a list":
 my_list <- lapply(split(subset(iris, select = -Species), iris$Species), "[", 1:2, )
 my_list
 
-# "[", 1:2,
-`[`(iris,1:2,)
-
+# Now unnest the list:
 unnest(my_list)
-# add column to indicate species
+# add column to indicate species (ie, take the list element names and make them
+# into a column)
 unnest(my_list, Species)
 
 
@@ -300,22 +330,31 @@ unnest(my_list, Species)
 
 # Extract one column into one or more columns.
 
-# It helps to know a little about regular expressions to get the most out of
-# this function. This is the example in the help pages:
+# This differs from separate() in that you can "extract" just a portion of a 
+# column and make a new column.
+
+# It helps to know a little about regular expressions to get the most out of 
+# this function. I'm only going to demonstrate the most basic usage with the
+# default regex argument.
 
 (df <- data.frame(x = c("a.b", "a.d", "b.c")))
 # pull out the stuff before the period and make a new column called "A"
 extract(df, x, "A")
-extract(df, x, c("A", "B"), "([[:alnum:]]+)\\.([[:alnum:]]+)")
-extract(df, x, c("A", "B"), "([[:alnum:]]+)\\.([[:alnum:]]+)")
 
 # doing same thing using strsplit and sapply
-tmp <- strsplit(as.character(df$x), ".", fixed = TRUE)
+tmp <- strsplit(as.character(df$x), "\\.")
 tmp
 data.frame(A=sapply(tmp, function(x)x[1]))
-
+# or to get both, like separate()
 data.frame(A=sapply(tmp, function(x)x[1]),
            B=sapply(tmp, function(x)x[2]))
+
+# using senate_bills data
+senate_bills$bill[1:5]
+# extract the bill number into a new column called bill.number
+tmp <- extract(senate_bills, col=bill,"bill.number", regex="([0-9]+)")
+head(tmp)
+# Notice the rest of the data frame is included.
 
 
 # Extended example --------------------------------------------------------
@@ -346,8 +385,7 @@ datTidy$year <- factor(extract_numeric(datTidy$year))
 datTidy$revenue <- extract_numeric(datTidy$revenue)
 head(datTidy)
 
-library(ggplot2)
-library(scales)
+library(scales) # for dollar() function
 ggplot(datTidy, aes(x=year,y=revenue, group=Industry, color=Industry)) +
   geom_line() + scale_y_continuous(labels=dollar) +
   ggtitle("Estimated Revenue over time (millions of dollars)")
