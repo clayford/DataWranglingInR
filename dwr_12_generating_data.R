@@ -21,13 +21,13 @@ load("datasets_L07.Rda")
 # function makes this possible. The syntax is sample(x, size, replace) where x 
 # is either a vector of one or more elements from which to choose, or a positive
 # integer, size is a non-negative integer giving the number of items to choose, 
-# and replace is a logical setting about whether sampling be with replacement 
-# (The default is FALSE).
+# and replace is a logical setting about whether sampling should be with
+# replacement (The default is FALSE).
 
 # The most basic use to generate a random permutation of the numbers 1:n:
 sample(5)
 # or generate a random permutation of a vector:
-sample(c("Kevin","Rod","Richardson","Dave","Rico"))
+sample(c("Rod", "Kevin","Dave","Rico","Richardson"))
 
 # Using set.seed() allows us to reproduce the same random sample. Just give it a
 # whole number, any number.
@@ -44,11 +44,12 @@ sample(1:6, size=1)
 # replace=TRUE
 sample(1:6, size=100, replace=TRUE)
 
-# Using table, we can simulate a 100 die rolls and tally up the totals
+# sample produces a vector, so we can manipulate it as we would any other 
+# vector. For example, simulate a 100 die rolls and tally up the totals using
+# table():
 table(sample(1:6, size=100, replace=TRUE))
 
-# sample produces a vector, so we can manipulate it as we would any other
-# vector. For example, we simulate rolling two dice and summing the total:
+# Or simulate rolling two dice and summing the total:
 sum(sample(1:6, size=2, replace=TRUE))
 
 # If we wanted to replicate this over and over, we could use the replicate() 
@@ -56,18 +57,24 @@ sum(sample(1:6, size=2, replace=TRUE))
 # times as you specify. Roll 2 dice 10,000 times and calculate proportions:
 rolls <- replicate(n=1e5, sum(sample(1:6, size=2, replace=TRUE)))
 prop.table(table(rolls))
+barplot(table(rolls))
 rm(rolls)
 
 # The sample function also has a prob argument that allows you to assign 
 # unequal probabilities to your items. For example to simulate the flip of a
 # loaded coin, with Tails having probability 0.65:
-sample(c("H","T"),100,replace=TRUE,prob = c(0.35,0.65))
+flips <- sample(c("H","T"),1000,replace=TRUE,prob = c(0.35,0.65))
+prop.table(table(flips))
+rm(flips)
 
 # Coins are nice, but we can also use sample to generate practical data, for 
 # example males and females. The following web site says UVa is 55 percent women
-# and 45 percent male. http://www.virginia.edu/Facts/Glance_Enrollment.html. We
-# can generate a fake random sample of 100 UVa students like so:
-sample(c("male","female"), 100, replace=TRUE, prob = c(0.45, 0.55))
+# and 45 percent male. http://www.virginia.edu/Facts/Glance_Enrollment.html. We 
+# can generate a fake random sample of 500 UVa students with a weighted sampling
+# scheme like so:
+students <- sample(c("male","female"), 500, replace=TRUE, prob = c(0.45, 0.55))
+prop.table(table(students))
+rm(students)
 
 
 # generating fixed levels -------------------------------------------------
@@ -80,7 +87,7 @@ rep(c("M","F"), each=10)
 # we can also specify number of times the vector is replicated:
 rep(c("M","F"), times=10)
 
-# finally we can replicate until a certain length is achieved
+# Finally we can replicate until a certain length is achieved
 rep(c("M","F"), length.out = 15)
 # or just length, for short
 rep(c("M","F"), length = 15)
@@ -294,14 +301,15 @@ abline(h=0.8) # add line for 80% power
 n[pest>0.8][1]
 
 
-# We can pretty much do this for any model, it just gets a little more complicated.
+# We can pretty much do this for any model, it just gets a little more
+# complicated.
 
 # Let's say we have a drug for some condition. We conduct an experiment on 100 
 # people, 50 treated and 50 not-treated. We measure the difference in the 
 # response before and after treatment to get our final response measure. We also
 # want to control for a continuous covariate, age. This is a classic ANCOVA 
 # (analysis of covariance). Say we believe the treatment increases the response 
-# effect by 2 units and we don't want to miss that effect. Is our sample size
+# effect by 2 units and we don't want to miss that effect. Is our sample size 
 # sufficient if we assume a standard error of 1?
 
 # Create a function to generate data
@@ -314,9 +322,9 @@ genData <- function(n,sd){
 # test the function
 genData(n=5, sd=5)
 
-# now use the function in the linear model function and call summary();
-# summary() produces a list with a matrix element called "coefficient"; the 3rd
-# row, 4th column of that matrix contains the p-value of the treatment
+# now use the function in the linear model function and call summary(); 
+# summary() produces a list with a matrix element called "coefficient"; the 3rd 
+# row, 4th column of that matrix contains the p-value of the treatment 
 # coefficient.
 dat <- genData(n=20, sd=5)
 lm.sum <- summary(lm(resp ~ age + treat, data=dat))
