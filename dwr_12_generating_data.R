@@ -91,11 +91,12 @@ write.csv(schedule, file="throwLog.csv", row.names=FALSE)
 # The seq() function allows you to generate sequences of numbers:
 seq(from = 1, to = 10, by = 2)
 seq(1, 10, 0.2)
+seq(1000, 0, -100)
 
 # The seq() function has a length.out argument that allows you to specify the 
 # size of the vector you want to create. It automatically calculates the
-# increment.
-seq(1, 10, length.out = 30)
+# increment. We usually just abbreviate to length
+seq(1, 10, length = 30)
 
 # The colon operator(:) also allows you to generate regular sequences in steps
 # of 1.
@@ -122,11 +123,6 @@ seq_len(10)
 # times in the lectures is the rnorm() function which generates data from a
 # Normal distribution.
 
-# Example: generate data from a Normally distributed pop'n with a mean of 150
-# and a standard deviation of 10.
-ex <- rnorm(n = 100, mean = 150, sd = 10)
-mean(ex); sd(ex)
-
 # In R, the functions for theoretical distributions take the form of dxxx, pxxx,
 # qxxx and rxxx, respectively. dxxx is for the density/mass function, pxxx is 
 # for the cumulative distribution function, qxxx is for the quantile function, 
@@ -146,8 +142,9 @@ X <- seq(0,10,0.01)
 Y <- dchisq(X,df = 3)
 plot(X,Y,type="l")
 
-# For discrete distributions such as the Binomial, you usually draw histograms
-# instead of curves since we're dealing with discrete values.
+# For discrete distributions such as the Binomial, you usually draw histograms 
+# instead of curves since we're dealing with discrete values. Here we graph the
+# probability mass function for a binomial dist'n with n=10 and p=0.35.
 X <- seq(0,10)
 Y <- dbinom(X,size = 10,prob = 0.35)
 plot(X,Y,type="h")
@@ -168,6 +165,8 @@ pnorm(q = 95, mean = 100, sd = 5, lower.tail = FALSE)
 # Binomial distribution with 10 trials and probability of 0.35: b(10,0.35) 
 # Probability of seeing 4 or fewer "successes" out of 10 trials:
 pbinom(q = 4, size = 10, prob = 0.35)
+# more than 4 "successes"
+pbinom(q = 4, size = 10, prob = 0.35, lower.tail = F)
 
 
 # qxxx - the quantile function
@@ -175,12 +174,18 @@ pbinom(q = 4, size = 10, prob = 0.35)
 # This returns the point (or the quantile) for a given probability.
 
 # Say we have a N(100,5); 
-# In what quantile can we expect to see values 15% of the time:
+# In what "lower" quantile can we expect to see values 15% of the time:
 qnorm(p = 0.15, mean = 100, sd = 5)
+# In what "upper" quantile can we expect to see values 15% of the time:
+qnorm(p = 0.15, mean = 100, sd = 5, lower.tail = FALSE)
+
 
 # Say we have a b(10,0.35);
 # How many successes can we expect to see 70% of the time:
 qbinom(p = 0.7, size = 10, prob = 0.35)
+# 4 or fewer
+qbinom(p = 0.7, size = 10, prob = 0.35, lower.tail = FALSE)
+# more than 3 
 
 # qnorm can be helpful when shading in areas under curves
 # Normal curve for N(100,5)
@@ -191,8 +196,8 @@ plot(X,Y,type="l")
 q <- qnorm(p = 0.15, mean = 100, sd = 5)
 # create vectors of x,y coordinates for polygon function;
 # rev() reverses vectors: rev(1:3) = 3 2 1 
-xx <- c(seq(85,q,length.out = 100),rev(seq(85,q,length.out = 100)))
-yy <- c(rep(0,100),dnorm(rev(seq(85,q,length.out = 100)), mean = 100, sd = 5))
+xx <- c(seq(85,q,length.out = 100),rev(seq(85,q,length = 100)))
+yy <- c(rep(0,100),dnorm(rev(seq(85,q,length = 100)), mean = 100, sd = 5))
 # use polygon to fill area under curve
 polygon(x=xx,y=yy,col="grey")
 # annotate graph
@@ -222,7 +227,7 @@ rbinom(n = 10, size = 10, prob = 0.5)
 clt  <- rexp(n = 1e5, rate = 1) + rbinom(1e5,10,0.4) + rchisq(1e5,df = 6) + 
   rnorm(1e5,12,12) + rpois(1e5,lambda = 3) + rt(1e5,df = 7)
 hist(clt, freq=FALSE)
-X <- seq(min(clt),max(clt),length.out = 500)
+X <- seq(min(clt),max(clt),length = 500)
 Y <- dnorm(X, mean = mean(clt), sd = sd(clt))
 lines(X,Y,type = "l")
 
@@ -240,14 +245,14 @@ lines(X,Y,type = "l")
 # Example: Simple linear regression
 
 # independent variable
-x <- seq(10,15,length.out = 100)
+x <- seq(10,15,length = 100)
 
 # population parameters
 intercept <- 10
 slope <- 5
 sigma <- 4
 
-# dependent variable
+# generate a dependent variable and plot
 y <- intercept + slope*x + rnorm(100,sd=sigma)
 plot(x,y)
 
@@ -255,11 +260,34 @@ plot(x,y)
 # closely estimate our population parameters:
 mod <- lm(y ~ x)
 summary(mod)
-abline(mod)
+abline(mod) # plot the fitted line
+
+# We can use the simulate() function to simulate responses from our fitted 
+# model. The result is a data frame with simulated responses filling the 
+# columns. We can then fit the simulated responses to our original independent
+# variable and then plot the fitted lines.
+
+sims <- as.matrix(simulate(mod,nsim = 100)) # needs to be matrix for lm()
+mods <- lm(sims ~ x) # fit all 100 responses to original IV
+
+# The mods object is a list of 12 items. 
+str(mods)
+
+# The coefficient element contains the coefficients. Here are the results for
+# the first 3 fits:
+mods$coefficients[,1:3]
+
+# Since mods$coefficients is a matrix, we can fit the 100 models using apply and
+# an anonymous function.
+apply(mods$coefficients,2,function(x)abline(a=x[1],b=x[2],col="grey", lty=3))
+
+# The result gives some indication of the variabilty of our fit. Normally we do 
+# such simulations on data we have collected, not on data we have generated.
 
 
 # Estimating Power --------------------------------------------------------
 
+# We can generate data in order to estimate statistical power.
 
 # Two-sample t tests compare the means of two normally distributed populations. 
 # An appropriate sample size for such a test depends on the hypothesized 
@@ -269,15 +297,17 @@ abline(mod)
 # means) when it is actually false. There is a function in R that allows you to 
 # calculate power and sample size for a t-test:
 
-# calculate power for n=20 in each group, an SD=1 and sig level=0.05
+# calculate power for n=20 in each group, SD=1, sig level=0.05 and difference of
+# means assumed to be 1 (delta):
 power.t.test(n = 20, delta = 1)
-# calculate sample size for power=0.80, an SD=1 and sig level=0.05
+# calculate sample size for power=0.80, SD=1, sig level=0.05 and difference of 
+# means assumed to be 1 (delta):
 power.t.test(power = 0.80, delta = 1)
 # Always round n to next largest integer
 
 # Now let's do a t-test with some sample data to estimate power via simulation:
 tout <- t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")
-# note the structure of tout
+# note the structure of tout; it's a list:
 str(tout)
 # pull out just the p-value
 tout$p.value
@@ -287,8 +317,8 @@ t.test(rnorm(20,5,1),rnorm(20,6,1),alternative = "two.sided")$p.value
 
 # Let's run 1000 such t-tests using the replicate function. The replicate() 
 # function allows to replicate an expression as many times as you specify. For 
-# example, to replicate 100 times sampling 10 items from a N(100,5) distribution
-# and taking the mean:
+# example, to replicate 25 times sampling 10 items from a N(100,5) distribution
+# and taking the median:
 replicate(25, median(rnorm(10,100,5)))
 
 # replciate t-tests:
@@ -303,16 +333,16 @@ mean(out < 0.05)
 # given n (sample size in each group):
 tpower <- function(n, N=1000){
   out <- replicate(N, t.test(rnorm(n,5,1),rnorm(n,6,1),alternative = "two.sided")$p.value)
-  sum(out < 0.05)/1000
+  mean(out < 0.05)
 }
 
-# Estimated power with n = 5 
-tpower(5)
+# Estimated power with n=5 (5 in each group) and N=20 (20 replications) 
+tpower(5, N=20)
 
 # Now run the tpower function for increasing levels of sample size
 n <- 10:30
 pest <- sapply(n,tpower) # this may take a moment
-plot(n,pest, type="b")
+plot(n, pest, type="b")
 abline(h=0.8) # add line for 80% power
 # smallest value n such that power is > 0.80
 n[pest>0.8][1]
@@ -330,59 +360,61 @@ n[pest>0.8][1]
 
 # Create a function to generate data
 genData <- function(n,sd){
-  treat <- rep(c(0,1),each=n)
-  age <- round(runif(n*2,20,60))
-  resp <- c(rnorm(n,10,sd),rnorm(n,12,sd))
+  treat <- rep(c(0,1),each=n) # treatment codes
+  age <- round(runif(n*2,20,60)) # random ages
+  resp <- c(rnorm(n,10,sd),rnorm(n,12,sd)) # delta = 2
   data.frame(resp,age, treat)
 }
-# test the function
-head(genData(n=50, sd=1))
+# test the function (50 in each group, SD=1)
+head(genData(n=20, sd=5))
 
 # now use the function in the linear model function and call summary();
 # summary() produces a list with a matrix element called "coefficient"; the 3rd
 # row, 4th column of that matrix contains the p-value of the treatment
-# coeffient.
-summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4]
+# coefficient.
+dat <- genData(n=20, sd=5)
+summary(lm(resp ~ age + treat, data=dat))
+summary(lm(resp ~ age + treat, data=dat))$coef[3,4]
 
 # now generate 1000 data sets and run the model 1000 times
-out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=1)))$coef[3,4])
+out <- replicate(1000,summary(lm(resp ~ age + treat, data=genData(n=20, sd=5)))$coef[3,4])
 # percent of times significance achieved (ie, estimated power)
 mean(out < 0.05)
 
 # with our function allowing different n and sd, we can try different settings:
-# estimate power assuming SD=2 and n=50
-out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=50, sd=2)))$coef[3,4])
+# estimate power assuming SD=5 and n=50
+out <- replicate(1000,summary(lm(resp ~ age + treat, data=genData(n=50, sd=5)))$coef[3,4])
 mean(out < 0.05)
 
-# estimated power assuming SD=2 and n=200
-out <- replicate(1000,summary(lm(resp ~ age*treat, data=genData(n=200, sd=2)))$coef[3,4])
+# estimated power assuming SD=5 and n=100
+out <- replicate(1000,summary(lm(resp ~ age + treat, data=genData(n=100, sd=5)))$coef[3,4])
 mean(out < 0.05)
 
 # we can also loop through various settings and graph the results. I change 1000
 # to 200 below in the interest of time:
-power <- numeric(length(seq(50,300,by=25)))
+power <- numeric(length(seq(25,300,by=25)))
 j <- 1
 # loop through sample sizes of 50 to 300 in increments of 25
-for(i in seq(50,300,by=25)){
-  out <- replicate(200,summary(lm(resp ~ age*treat, data=genData(n=i, sd=2)))$coef[3,4])
+for(i in seq(25,300,by=25)){
+  out <- replicate(200,summary(lm(resp ~ age + treat, data=genData(n=i, sd=5)))$coef[3,4])
   power[j] <- mean(out < 0.05)
   j <- j + 1
 }
 # graph the result
-plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
+plot(seq(25,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
 abline(h=0.8, lty=2)
 
 # Instead of a "for" loop we could do it the R way: write a function and then
 # use sapply.
 powerFun <- function(x){
-  out <- replicate(200,summary(lm(resp ~ age*treat, data=genData(n=x, sd=2)))$coef[3,4])
+  out <- replicate(200,summary(lm(resp ~ age + treat, data=genData(n=x, sd=5)))$coef[3,4])
   mean(out < 0.05)
 } 
 # Now apply the function seq(50,300,by=25)
-power <- sapply(seq(50,300,by=25), powerFun)
+power <- sapply(seq(25,300,by=25), powerFun)
 
 # and again graph the result
-plot(seq(50,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
+plot(seq(25,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
 abline(h=0.8, lty=2)
 
 
