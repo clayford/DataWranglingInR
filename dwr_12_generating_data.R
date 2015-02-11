@@ -359,7 +359,7 @@ for(i in seq(25,200,by=25)){
   j <- j + 1
 }
 # graph the result
-plot(seq(25,300,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
+plot(seq(25,200,by=25), power,type="b", xlab="sample size", ylab="power", ylim=c(0,1))
 abline(h=0.8, lty=2)
 
 # Instead of a "for" loop we could do it the R way: write a function and then
