@@ -328,6 +328,7 @@ genData(n=5, sd=5)
 # coefficient.
 dat <- genData(n=20, sd=5)
 lm.sum <- summary(lm(resp ~ age + treat, data=dat))
+
 lm.sum$coefficients
 lm.sum$coefficients[3,4]
 
