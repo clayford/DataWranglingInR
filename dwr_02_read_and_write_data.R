@@ -2,7 +2,7 @@
 #' title: "Data Wrangling in R: Reading and Writing Data"
 #' author: "Clay Ford"
 #' date: "Spring 2015"
-#' output: pdf_document
+#' output: html_document
 #' ---
 
 
@@ -170,6 +170,7 @@ str(arrests)
 
 # read.xlsx() in xlsx package; requires Java
 # read.xls() in gdata package; requires Perl
+# read_excel() in readxl package; newer package
 
 # I will demonstrate the xlsx package:
 # install.packages("xlsx") # only need to do this once
@@ -183,10 +184,11 @@ str(electionData)
 # It's a mess; we'll come back to this later
 
 
-# The foreign package -----------------------------------------------------
+# The foreign and haven packages ------------------------------------------
 
-# The foreign package provides functions for reading data from other programs
-# such as Stata, SPSS, Minitab. The foreign package comes with R.
+# The foreign package provides functions for reading data from other programs 
+# such as Stata, SPSS, Minitab. The foreign package comes with R. Two commonly
+# used foreign functions are:
 
 # read.dta() - read in Stata DTA file; frozen and will not support Stata formats
 # after version 12.
@@ -195,6 +197,11 @@ str(electionData)
 # orignally written in 2000 and has limited support for changes in SPSS format
 # since.
 
+# The haven package is a newer package that provides a lot of the same 
+# functionality as the foreign package. Since it is in active development it 
+# presumably will provide better support for changes in Stata and SPSS. Its 
+# functions are similarly named as the foreign functions with underscores
+# replacing the periods. For example, read_dta() and and read_spss().
 
 
 # Read in multiple files --------------------------------------------------

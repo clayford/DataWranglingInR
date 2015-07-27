@@ -2,7 +2,7 @@
 #' title: "Data Wrangling in R: Data Structures"
 #' author: "Clay Ford"
 #' date: "Spring 2015"
-#' output: pdf_document
+#' output: html_document
 #' ---
 
 
