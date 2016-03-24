@@ -1,7 +1,7 @@
 #' ---
 #' title: "Data Wrangling in R: Data Manipulation Part 1"
 #' author: "Clay Ford"
-#' date: "Spring 2015"
+#' date: "Spring 2016"
 #' output: pdf_document
 #' ---
 
@@ -10,8 +10,8 @@
 # Intro -------------------------------------------------------------------
 
 # "Data Manipulation" means many things. It could actually be the title of this 
-# course! In this lecture it refers to adding, deleting and changing data in the
-# R environment.
+# course! In this lecture we look at some common functions and strategies for
+# manipulating data.
 
 # Let's work with data from lecture 2.
 load("../data/datasets_L02.Rda")
@@ -31,7 +31,8 @@ load("../data/datasets_L02.Rda")
 # apply() applies a function over columns or rows of a matrix (or array);
 # lapply() applies a function over a list or vector; it returns a list;
 # sapply() is like lapply() except it attempts to "simplify" output;
-# tapply() applies a function to groups within a vector;
+# tapply() applies a function to groups within a vector and returns a table 
+#          of results.
 
 # apply 
 
@@ -40,7 +41,7 @@ load("../data/datasets_L02.Rda")
 # are additional arguments for FUN.
 
 # Example: Make a matrix called "x"
-x <- cbind(x1 = rep(1:3,3), x2 = c(4:1, 2:5,10))
+x <- cbind(x1 = rep(1:3,3), x2 = c(4:1, 2:5, 10))
 x
 class(x)
 # apply a function across rows
@@ -51,7 +52,7 @@ apply(x, 2, mean)
 # is the fraction (0 to 0.5) of observations to be trimmed from each end of x 
 # before the mean is computed.
 apply(x, 2, mean, trim=.2)
-# apply the range function; this returns a vector
+# apply the range function; this returns a matrix
 apply(x, 2, range)
 
 # apply will work on data frames as well, but internally R converts it to a
@@ -81,25 +82,53 @@ y <- list(a=runif(10), b=rnorm(12), c=rnorm(15,mean=10,sd=2))
 y
 # since these are random numbers, your list object will differ from mine.
 class(y)
-lapply(y,mean)
-lapply(y,sd)
 
-# apply a function of our own creation, one that calculates the standard error:
+# Now we use lapply to "apply" functions to the list components.
+
+# number of elements in each list item.
+lapply(y, length)
+
+# mean of each component
+lapply(y, mean)
+
+# standard deviation of each component
+lapply(y, sd)
+
+# get the 2nd element of each component
+lapply(y, `[`, 2)
+
+# That last one may seem weird. It turns out subsetting brackets are actually
+# functions. 
+
+# the following are identical
+y$a[2]
+`[`(y$a,2)
+
+# Obviously the first is easier to read, but the second implies we can use it as
+# an apply function.
+
+# Actually just about everything is a function in R. Even the math operators:
+`+`(3,4)
+
+# We can create our own functions when using apply. Below we apply a function
+# that calculates the standard error:
 lapply(y, function(x) sd(x)/sqrt(length(x)))
 
 # What we just did was create an "anonymous" function on the fly. We wrote a
 # temporary program to calculate the standard error of the 3 list elements in y.
 
-# A digression on writing Functions in R:
+
+# A digression on writing Functions in R ----------------------------------
 
 # R comes with many functions, such as mean, median, sd, cor, and so on. But R 
-# allows you to easily write your own functions. You basically use the
-# function() function, with arguments of your own creation. 
+# allows you to easily write your own functions. To do so, you use the 
+# function() function, with arguments of your own creation.
 
 # Here's a simple (and useless) function that takes a number and adds 1 to it:
 
 add1 <- function(num) num + 1
 add1(num = 4)
+add1(num = c(0,1,1,2))
 
 # In the function argument we define an argument called "num". After that we 
 # create an expression that takes the value of "num". Sort of like f(x) = x + 1.
@@ -125,23 +154,27 @@ bmi(215,69,metric=FALSE)
 # We can also add a check to return a specific error message if someone tries
 # to use bmi() with something other than numbers:
 bmi <- function(weight, height, metric=TRUE){
-  if(!is.numeric(weight) || !is.numeric(height)) stop("please enter numbers")
+  if(!is.numeric(weight) || !is.numeric(height)){
+    stop("please enter numbers")
+  } 
   if(metric==TRUE) weight/(height^2)
   else (weight/(height^2))*703
 }
+
+# bmi(weight = 215, "69", metric = FALSE) returns an error with the message
+# "please enter numbers"
 
 # is.numeric returns TRUE if a vector is numeric. !is.numeric returns TRUE if a 
 # vector is not numeric. The stop() function stops a function and returns an
 # error message.
 
-# And down the rabbit hole we go! R programming is quite powerful. However as 
-# I've said before, you can be an effective data wrangler and analyst without 
-# being a prolific R developer/programmer. On the other hand, I encourage you to
-# learn more. The Art of R Programming by Normal Matloff is a great book to get 
-# you started. But for this class, this is enough programming. Our goal is to 
-# quickly and efficiently get data into R and prepare it for analysis. We can 
-# almost always do that with existing functions or simple functions of our own
-# creation.
+# And down the rabbit hole we go! R programming is quite powerful. However, you
+# can be an effective data wrangler and analyst without being a prolific R
+# developer/programmer. On the other hand, I encourage you to learn more. The
+# Art of R Programming by Normal Matloff is a great book to get you started. But
+# for this class, this is enough programming. Our goal is to quickly and
+# efficiently get data into R and prepare it for analysis. We can almost always
+# do that with existing functions or simple functions of our own creation.
 
 # Once we create a function we can use it by itself or use it with an apply 
 # function. Below we create a function called "spread" that calculates the 
@@ -157,9 +190,9 @@ lapply(y, spread)
 # Recall that data frames are actually lists, so we can use lapply on data 
 # frames. Let's use spread on the weather data frame. Now, obviously spread 
 # won't work on non-numeric functions, so we need to select only numeric 
-# columns. Let's modify our spread function to only work for numeric vectors or
-# otherwise give a message. To do this, we'll need to use {} braces so our
-# function can have multiple lines of code. We also add na.rm=TRUE to the range
+# columns. Let's modify our spread function to only work for numeric vectors or 
+# otherwise give a message. To do this, we'll need to use {} braces so our 
+# function can have multiple lines of code. We also add na.rm=TRUE to the range 
 # function to make it drop NA values before calculating the range.
 
 spread <- function(x) {
@@ -168,6 +201,23 @@ spread <- function(x) {
 }
 
 lapply(weather, spread)
+
+# Recall the allStocks list. It's a list of 7 data frames. We can apply 
+# functions to each data frame using lapply:
+lapply(allStocks, dim)
+lapply(allStocks, head, n = 3)
+
+# column means for all but 1st column, rounded to 2 decimal places
+lapply(allStocks, function(x) round(colMeans(x[,-1]),2))
+
+# Proportion of times stock closed higher than it opened?
+lapply(allStocks, function(x) mean(x$Close > x$Open))
+
+# Biggest change in Open and Closing price:
+lapply(allStocks, function(x)max(x$Close - x$Open))
+
+# Largest volume on what day:
+lapply(allStocks, function(x) x[which.max(x$Volume),])
 
 
 # sapply
@@ -184,7 +234,8 @@ sapply(y, function(x) sd(x)/sqrt(length(x)))
 # Watch what happens when we use sapply() with our spread function:
 sapply(weather, spread)
 
-# Notice "simplification" has resulted in everything being converted to character.
+# Notice "simplification" has resulted in everything being converted to
+# character! Perhaps not what we wanted.
 
 # tapply
 
@@ -208,8 +259,27 @@ tapply(weather$Mean.TemperatureF, weather$Events, mean)
 # have uneven or "ragged" groups, that is groups of unequal size, that are not
 # in a list.
 
+# tapply also allows anonymous functions. For example here's how we can find the
+# lowest three minimum temperatures in each Event group
+tapply(weather$Min.TemperatureF, weather$Events, function(x)sort(x)[1:3])
+
+# Notice we got a list. Also notice the NAs for the "Fog-Thunderstorm" and
+# "Thunderstorm" events. Why is that?
+summary(weather$Events)
+
+# We can use more than one variable for grouping. We just need to wrap the 
+# grouping variables in a list. Let's demonstrate with a data set that comes
+# with R: mtcars, Motor Trend Car Road Tests from 1974.
+str(mtcars)
+
+# The tapply function allows us to calculate means of groups determined by 
+# multiple grouping levels and returns the result in the form of a table. Here
+# we find mean mpg by cyl and am:
+with(mtcars, tapply(mpg, list(cyl,am), mean))
+
 # In later lectures we'll see that there are other friendlier, easier-to-use
 # functions for aggregation.
+
 
 # Deleting columns from data frame ----------------------------------------
 
@@ -231,7 +301,7 @@ str(electionData)
 # Apply the function all(is.na(x)) to each column of electionData. Notice that
 # electionData is a data frame, and that a data frame is a type of list. Thus we
 # can use lapply and sapply on data frames.
-sapply(electionData, function(x)all(is.na(x)))
+sapply(electionData, function(x) all(is.na(x)))
 
 # But we only want the columns that evaluate to TRUE:
 which(sapply(electionData, function(x)all(is.na(x))))
@@ -247,21 +317,23 @@ electionData <- electionData[,-drop]
 # Look again at electionData. Several empty rows read in with all NA.
 tail(electionData)
 
-# Row 53 contains column summaries which I don't want. Plus rows 54 and 56 have 
-# stray figures not relevant to the main records of the data set. We can 
-# specifically remove those columns using a '-' sign in front of a vector
-# containing the row numbers:
-electionData <- electionData[-c(53:56),]
+# which rows have all NAs?
+which(apply(electionData,1,function(x)all(is.na(x))))
 
-# Now we want to identify row numbers for rows of all missing data and drop from
-# data frame. Notice that electionData is a data frame but we use apply(). Can
-# we do that? Yes, just know that apply() first converts data frames to matrices
-# before it applies a function. In this case it's OK because NA is the same no 
-# matter the class.
-drop <- which(apply(electionData, 1, function(x)all(is.na(x))))
-drop
+# Let's drop them the same we dropped the columns with all NAs.
+drop <- which(apply(electionData,1,function(x)all(is.na(x))))
 electionData <- electionData[-drop,]
 
+# Let's look at the tail again.
+tail(electionData)
+
+# The last three rows contain column summaries which I don't want or stray
+# figures not relevant to the main records of the data set. We should drop them.
+keep <- 1:(nrow(electionData)-3)
+electionData <- electionData[keep,]
+
+# looks better.
+tail(electionData)
 
 
 # Adding columns/variables to data frames ---------------------------------
@@ -296,6 +368,32 @@ head(weather$freezing)
 sum(weather$freezing) # number of days that never got above freezing
 which(weather$freezing==1) # which rows?
 weather[weather$freezing==1,"EST", drop=FALSE] # which days?
+
+# More on ifelse()
+
+# ifelse() is a vectorized version of an if-then-else construction. The first 
+# argument is a TRUE/FALSE comparison. The second argument is the value to 
+# output in the case of TRUE. The third argument is the value to output in the 
+# case of FALSE. It's a nice function for creating a vector of binary values and
+# it's not limited to outputting numbers. The second and third arguments can be 
+# text. The output of ifelse() will always be the same length as the conditional
+# argument.
+
+# In this case, we could have just used weather$Max.TemperatureF <= 32 by itself
+# to create a logical vector. Recall TRUE and FALSE are treated as 1 and 0. If 
+# we wanted actual 0/1 values, we could have wrapped weather$Max.TemperatureF <=
+# 32 in as.numeric(). In fact, that's actually much faster. Let's demonstrate:
+
+# vector with 10,000,000 random normal values
+bv <- rnorm(1e7)
+print(object.size(bv), units = "Mb")
+
+# create a vector of 0/1 based on bv > 0:
+system.time(out1 <- ifelse(bv > 0, 1, 0))
+system.time(out2 <- as.numeric(bv > 0))
+
+# The first one is easier to "read" but the second is faster.
+rm(bv, out1, out2)
 
 # We can also use the within() function to derive new variables and add to a 
 # data frame. The syntax is within(data, expr), where data is a data frame and
@@ -343,6 +441,10 @@ bot <- electionData[1,] # extract first row
 # look at bot; it's a data frame with "names"
 bot # ugly!
 class(bot)
+# "tbl_df" "tbl"? That's because we used the readxl package to import the data, 
+# which made the data frames of class "tbl_df", a class provided for the dplyr 
+# package. We'll cover that package in much greater detail soon.
+
 names(bot) # has the same column names 
 # remove names from bot
 names(bot) <- NULL 
@@ -360,10 +462,47 @@ electionData <- electionData[-1,] # drop the first row
 # a little better now, but still needs work. We'll get to it....
 
 
+# Removing duplicates -----------------------------------------------------
+
+# Base R has two main functions for dealing with duplicate data: unique() and 
+# duplicated(). 
+
+# duplicated(x) gives the indices of duplicated elements. unique(x) returns a 
+# vector, data frame or array like x but with duplicate elements/rows removed. 
+# Another function, anyDuplicated(),  is a shortcut for any(duplicated(x)), that
+# returns the index i of the first duplicated entry if there is one, and
+# 0 otherwise
+
+# any duplicate dates in weather?
+any(duplicated(weather$EST))
+anyDuplicated(weather$EST) # more efficient
+
+# Any duplicate max Temps? Of course, but let's check
+anyDuplicated(weather$Max.TemperatureF)
+# The temp at position 10 is the first duplicate
+weather$Max.TemperatureF[1:10]
+
+# To see the unique max Temps:
+unique(weather$Max.TemperatureF)
+
+# uniqe and duplicated work on data frames as well.
+dim(arrests)
+dim(unique(arrests)) # same size, no duplicates.
+any(duplicated(weather))
+
+dupeDat <- data.frame(x=c(1,2,1,3),y=c(1,2,1,2))
+dupeDat # duplicate rows 1 and 3
+dim(dupeDat)
+dim(unique(dupeDat))
+(dedupeData <- unique(dupeDat))
+
 # Reorder columns in a data frame -----------------------------------------
 
-# One way is to simply specify the column numbers in the order you want. For 
-# example, move temp.range next to the temperature columns:
+# We rarely need to reorder the columns in a data frame. R doesn't care about 
+# the order, nor do any of the statistical functions you'll use on the data. 
+# However, it is possible. One way is to simply specify the column numbers in
+# the order you want. For example, move temp.range next to the temperature
+# columns:
 names(weather)
 weather <- weather[,c(1:4,24,5:23,25:27)]
 
@@ -380,7 +519,7 @@ comment(arrests)
 # We can set our own object attributes using the attr() function. The syntax is 
 # attr(x, which), where x is the object and which is the name of your attribute.
 # For example, I could create an attribute called URL that contains the link to
-# where I downloaded tese data:
+# where I downloaded these data:
 attr(arrests, "URL") <- "http://www.icpsr.umich.edu/icpsrweb/ICPSR/studies/00049"
 
 # Notice the comment and URL attributes are printed at the bottom of str()
@@ -389,7 +528,10 @@ str(arrests)
 
 # To view all object attributes, use attributes(). Probably not wise to use on a
 # large data frame since one of the attributes is "row.names", which usually
-# contains row numbers. To view specific attributes, use the attr() function:
+# contains row numbers. Instead you can wrap a call to attributes in str().
+str(attributes(arrests))
+
+# To view specific attributes, use the attr() function:
 attr(arrests, "URL")
 
 # save data for next set of lecture notes

@@ -1,7 +1,7 @@
 #' ---
 #' title: "Data Wrangling in R: Regular Expressions"
 #' author: "Clay Ford"
-#' date: "Spring 2015"
+#' date: "Spring 2016"
 #' output: pdf_document
 #' ---
 
@@ -18,14 +18,20 @@ library(qdapRegex)
 
 # Intro -------------------------------------------------------------------
 
-# A 'regular expression' is a pattern that describes a set of strings. For 
-# example, say you want to find all 5-digit numbers in a document, or find all 5
-# digit numbers ending in "00", or find all 5 digit numbers at the end of a 
-# sentence. These are examples of string patterns. Regular Expressions are the
-# language we use to describe the pattern.
+# A 'regular expression' is a pattern that describes a set of strings. 
+# Examples:
 
-# You should know, however, regular expressions are a language into itself.
-# There are entire books devoted to regular expressions. 
+# - all 5-digit numbers in a document 
+# - all 5-digit numbers ending in 00
+# - words spelled in ALL CAPS
+# - words in brackets or delimiters [],<>,(),{}
+# - words at the end of a sentence
+# - all email addresses
+# - dates in a certain format
+
+# These are examples of string patterns. Regular Expressions are the language we
+# use to describe the pattern. You should know, however, regular expressions are
+# a language into itself. There are entire books devoted to regular expressions.
 
 # Quote floating around internet: "Some people, when confronted with a problem, 
 # think 'I know, I'll use regular expressions.' Now they have two problems." 
@@ -39,12 +45,18 @@ library(qdapRegex)
 # Two PDF files you may want to download and save for reference:
 # http://biostat.mc.vanderbilt.edu/wiki/pub/Main/SvetlanaEdenRFiles/regExprTalk.pdf
 # http://gastonsanchez.com/Handling_and_Processing_Strings_in_R.pdf
-# Good page to print off/bookmark:
+
+# Good pages to print off/bookmark:
 # http://www.cheatography.com/davechild/cheat-sheets/regular-expressions/
+# http://regexlib.com/CheatSheet.aspx
+# or just Google "regex cheatsheet"
+
 # Good library book:
 # Go to virgo, search for "Regular expressions cookbook"
 
-# RegEx tutorial: http://www.rexegg.com/
+# RegEx tutorials: 
+# http://www.rexegg.com/
+# http://www.regular-expressions.info/
 
 # Regular Expression Basics -----------------------------------------------
 
@@ -57,14 +69,16 @@ library(qdapRegex)
 # (1) LITERAL CHARACTERS 
 
 # These are the literal characters you want to match. If you want to find the
-# word "good", you search for "good", the literal characters.
+# word "factor", you search for "factor", the literal characters.
 
 # (2) MODIFIERS
 
 # Modifiers define patterns;
 # meet the modifiers:
 # $ * + . ? [ ] ^ { } | ( ) \
-# precede these with double backslash if you want to treat them as regular text
+
+# precede these with double backslash (in R!) if you want to treat them as
+# literal characters.
 
 # ^  start of string
 # $  end of string
@@ -76,47 +90,137 @@ library(qdapRegex)
 # {} quantifier brackets: exactly {n}; at least {n,}; between {n,m}
 # () group patterns together
 # \  escape character (needs to be escaped itself in R: \\)
+# [] character class brackets (not to be confused with R's subsetting brackets!)
+
 
 # (3) CHARACTER CLASSES
 # a range of characters to be matched;
 # placed in brackets: []
-# For example: [a-q] means all letters from a - q
+# For example: [a-q] means all letters from a - q;
+# [a-zA-Z] means all alphabetic characters;
+# [0-9A-Za-z] means all alphanumeric characters;
 # The ^ symbol means "not" when used in brackets, so [^abc] means "Not (a or b
 # or c)"
 
-# see help(regex) for an indepth overview of regular expressions.
+# From R documentation: "Because their interpretation is locale- and 
+# implementation-dependent, character ranges are best avoided." Good advice if
+# you're sharing R code. Otherwise, fine to use on your own.
+
+# PREDEFINED CHARACTER CLASSES
+
+# [:lower:] - Lower-case letters in the current locale. [a-z]
+# 
+# [:upper:] - Upper-case letters in the current locale. [A-Z]
+# 
+# [:alpha:] - Alphabetic characters: [:lower:] and [:upper:]. [a-zA-Z]
+# 
+# [:digit:] - Digits: 0 1 2 3 4 5 6 7 8 9. [0-9]
+# 
+# [:alnum:] - Alphanumeric characters: [:alpha:] and [:digit:]. [0-9A-Za-z]
+# 
+# [:punct:] - Punctuation characters: ! " # $ % & ' ( ) * + , - . / : ; < = > ?
+# @ [ \ ] ^ _ ` { | } ~.
+# 
+# [:graph:] - Graphical characters: [:alnum:] and [:punct:].
+# 
+# [:blank:] - Blank characters: space and tab, and possibly other
+# locale-dependent characters such as non-breaking space.
+# 
+# [:space:] - Space characters: tab, newline, vertical tab, form feed, carriage
+# return, space and possibly other locale-dependent characters.
+# 
+# [:print:] - Printable characters: [:alnum:], [:punct:] and space.
+
+# Note that the brackets in these class names are part of the symbolic names, 
+# and must be included in addition to the brackets delimiting the bracket list!
+
+# More regex codes! (Yay! More stuff!) Be sure to escape that backslash!
+
+# \b - Word boundary
+# \d - any decimal digit
+# \w - any word character
+# \s - any white-space character
+# \n - a New line
+
+# see ?regex for an indepth overview of regular expressions.
 
 # RegEx examples ----------------------------------------------------------
 
 # Let's create some sample text to demonstrate regular expressions:
 
 someText <- c("  here's a sentence", 
-              "This is me typing  ", 
+              "This is me typing at 2:02 in the morning",
+              "Back in 1995 I was only 22.",
               "You saw 4 monkeys?", 
               "There are 10 kinds of people,    those that understand binary       
               and the other 9 that don't care",
               "Who likes pancakes? I do. I really really like pancakes!", 
               "     <strong>Bolded text is bold and daring</strong>",
-              "figure1.jpg", 
-              "cover.jpg")
+              "figure1.jpg", "cover.jpg", "report.pdf", "log.txt",
+              "I'm a one man wolfpack and I weigh 222",
+              "OMG, a 3-eyed cyclops!!!",
+              "2112 is an awesome album.",
+              "2222 is my PIN")
 someText
+
+# Examples of SUPER BASIC regex patterns:
 
 # find elements in vector beginning with 1 or more spaces
 grep("^ +", someText, value=T) 
+grep("^[[:blank:]]+", someText, value=T) 
+
 # find elements containing a question mark; need to "escape" the "?"
 grep("\\?", someText, value=T) 
+
 # find elements ending with a question mark
 grep("\\?$", someText, value=T) 
+
 # find elements containing one or more numbers
 grep("[0-9]+", someText, value=T) 
+grep("[[:digit:]]+", someText, value=T) 
+
 # find elements containing numbers with 2 digits
 grep("[0-9]{2}", someText, value=T)
+grep("[[:digit:]]{2}", someText, value=T) 
+
 # text ending with .jpg; need to escape the "."
 grep("\\.jpg$", someText, value=T) 
+
+# text ending with a 3=character file extension
+grep("\\.[[:alpha:]]{3}$", someText, value=T) 
+grep("\\.\\w{3}$", someText, value=T) 
+
 # text beginning with only letters, and containing only letters, ending in .jpg
 grep("^[a-zA-Z]+\\.jpg", someText, value=T)
+grep("^[[:alpha:]]+\\.jpg", someText, value=T)
+
 # text containing two consecutive "really "
 grep("(really ){2}",someText, value=T) 
+
+# text containing two or more !
+grep("!{2,}",someText, value=T) 
+
+# Contraction beginning with 3 letters
+grep(" [[:alpha:]]{3}'", someText, value = T)
+grep("\\b[[:alpha:]]{3}'", someText, value = T)
+
+# text with 3-character words
+grep("\\b\\w{3}\\b", someText, value = T)
+
+# text with 3-character words but no file names
+grep("\\b\\w{3}\\b[^[:punct:]]", someText, value = T)
+
+# text with ALL CAPS (two or more CAPS)
+grep("\\b[[:upper:]]{2,}\\b", someText, value = T)
+
+# text with a new line
+grep("\\n", someText, value = T)
+
+# matching 0 or more times
+grep("2*2", someText, value = T)
+
+# matching 1 or more times
+grep("2+2", someText, value = T)
 
 
 # Search/Replace with RegEx -----------------------------------------------
@@ -125,16 +229,20 @@ grep("(really ){2}",someText, value=T)
 # all matches respectively. In a previous lecture we used them to search/replace
 # literal strings. Now let's use them with regular expressions. A few examples:
 
-# (1) Replace Repeated Whitespace with a Single Space
+# Replace Repeated Whitespace with a Single Space
 gsub(" +"," ", someText)
+gsub("\\s+"," ",someText) # removes \n!
 
-# (2) Trim Leading and Trailing Whitespace: 
+# Trim Leading and Trailing Whitespace: 
 gsub("^ +| +$","", someText)
 
-# Or better yet, just use the stringr function str_trim()
-str_trim(someText)
+# Or better yet, just use the built-in function
+trimws(someText)
 
-# (3) Remove HTML/XML tags (basic)
+# Replace a new line with a space
+gsub("\\n"," ",someText)
+
+# Remove HTML/XML tags (basic)
 # "<" followed by anything but ">" and ending with ">" 
 gsub("<[^>]*>","",someText)
 
@@ -150,7 +258,7 @@ rm_angle(someText)
 # str_extract() extracts first piece of a string that matches a pattern while
 # str_extract_all() extracts all matches. A few examples:
 
-# (1) extract one- or two-digit numbers:
+# Extract one- or two-digit numbers:
 # first match
 str_extract(someText, "[0-9]{1,2}") 
 # all matches; returns a list
@@ -159,12 +267,20 @@ str_extract_all(someText, "[0-9]{1,2}")
 # vector:
 unlist(str_extract_all(someText, "[0-9]{1,2}"))
 
-# (2) extract a string that contains a . followed by 3 lower-case letters:
+# Extract a string that contains a . followed by 3 lower-case letters (file
+# extensions)
 str_extract(someText,"\\.[a-z]{3}")
 
-# (3) extract text beginning with only letters, and containing only letters,
+# just the file extenions without a period (not very elegant but works)
+str_extract(someText,"(jpg|tif|pdf|txt)$")
+
+# Extract text beginning with only letters, and containing only letters,
 # ending in .jpg
 str_extract(someText, "^[a-z]+\\.jpg")
+
+# to get just the text
+tmp <- str_extract(someText, "^[a-z]+\\.jpg")
+tmp[!is.na(tmp)]
 
 
 # Web scraping ------------------------------------------------------------
@@ -194,10 +310,14 @@ k <- grep("[0-9]{1,3}\\.</b>", senate_bills)
 k[1:4]
 # Use k to subset the data
 temp <- senate_bills[k]
-temp[1:4]
+head(temp)
+tail(temp)
+
 # Now replace the HTML tags with space
 temp <- gsub("<[^>]*>", " ",temp)
-temp[1:4]
+head(temp)
+tail(temp)
+
 # break vector elements by ":"
 temp <- strsplit(temp,":")
 
@@ -215,53 +335,98 @@ bill <-str_extract(bill, "S\\.[0-9]{1,3}")
 head(bill)
 
 
-# Now let's get the bill title:
-temp[[1]][2]
+# Now let's get the bill title. It's in the second element.
+temp[[1]]
 # pull out second element of each list component
 title <- sapply(temp,function(x)x[2])
 title[1:4]
 # get rid of " Sponsor" at end
 title <- gsub(" Sponsor$","",title)
 # get rid of leading and trailing spaces
-title <- str_trim(title) 
-title[1:4]
+title <- trimws(title) 
+head(title)
 
-# Now get the bill sponsor:
-temp[[1]][3]
+# Now get the bill sponsor. It's in the third element.
+temp[[1]]
 sponsor <- sapply(temp,function(x)x[3])
-sponsor <- str_trim(sponsor) # get rid of leading spaces
-sponsor[1:3]
+sponsor <- trimws(sponsor) # get rid of leading spaces
+head(sponsor)
 
 # Get number of cosponsors by first finding those vector elements that contain 
-# the string "Cosponsors". Have to be careful; not all bills have Cosponsors,
-# but all have the word "Cosponsors".
+# the string "Cosponsors". Have to be careful; not all bills have Cosponsors
+# (ie, Cosponsors (None) ) but all have the word "Cosponsors".
 
 k <- grep("Cosponsors",senate_bills)
 # subset vector to contain only those matching elements
 temp <- senate_bills[k]
 head(temp)
-# split on "</a>"
-temp <- strsplit(temp,"Cosponsors")
-head(temp)
-# Number of cosponsors in second element
-cosponsors <- sapply(temp,function(x)x[2])
-# let's view them all:
-cosponsors
 
-# Appears we need to extract one- to two-digit numbers or the word "None":
-cosponsors <- str_extract(cosponsors,"[0-9]{1,3}|None")
-cosponsors
-
+# Now extract number of cosponsors; either None or a 1-2 digit number.
+cosponsors <- str_extract(temp, pattern = "\\([[:alnum:]]{1,4}\\)")
+# Get rid of parentheses
+cosponsors <- gsub(pattern = "[\\(|\\)]", replacement = "", cosponsors)
 # Replace "None" with 0 and convert to numeric
 cosponsors <- as.numeric(gsub("None",0,cosponsors))
 summary(cosponsors)
 
 # And finally create data frame
-senate_bills <- data.frame(bill, title, sponsor, cosponsors)
+senate_bills <- data.frame(bill, title, sponsor, cosponsors, 
+                           stringsAsFactors = FALSE)
 head(senate_bills)
+
+# What if we wanted to do this for all results? We have to iterate through the URLs.
+
+# http://thomas.loc.gov/cgi-bin/bdquery/d?d113:0:./list/bss/d113SN.lst:[[o]]&items=100&
+# http://thomas.loc.gov/cgi-bin/bdquery/d?d113:100:./list/bss/d113SN.lst:[[o]]&items=100&
+# http://thomas.loc.gov/cgi-bin/bdquery/d?d113:200:./list/bss/d113SN.lst:[[o]]&items=100&
+# ...  
+# http://thomas.loc.gov/cgi-bin/bdquery/d?d113:3000:./list/bss/d113SN.lst:[[o]]&items=100&
+
+# We also may want to create a data frame in advance to store the data
+  
+SenateBills <- data.frame(bill=character(3020), title=character(3020), 
+                          sponsor=character(3020), 
+                          cosponsors=numeric(3020), 
+                          stringsAsFactors = FALSE)
+
+# Now cycle through the URLS using the code from above. I suppose ideally I
+# would determine the upper bound of my sequence (3000) programmatically, but
+# this is a one-off for the 113th congress so I'm cutting myself some slack.
+
+for(i in seq(0,3000,100)){
+  senate_bills <- readLines(paste0("http://thomas.loc.gov/cgi-bin/bdquery/d?d113:",i,":./list/bss/d113SN.lst:"))
+  # bill number
+  k <- grep("[0-9]{1,3}\\.</b>", senate_bills)
+  temp <- senate_bills[k]
+  temp <- gsub("<[^>]*>", " ",temp)
+  temp <- strsplit(temp,":")
+  bill <- sapply(temp,function(x)x[1])
+  bill <- str_extract(bill, "S\\.[0-9]{1,4}") # need to increase to 4 digits
+  # title
+  title <- sapply(temp,function(x)x[2])
+  title <- gsub(" Sponsor$","",title)
+  title <- trimws(title) 
+  # sponsor
+  sponsor <- sapply(temp,function(x)x[3])
+  sponsor <- trimws(sponsor) 
+  # coponsors
+  k <- grep("Cosponsors",senate_bills)
+  temp <- senate_bills[k]
+  cosponsors <- str_extract(temp, pattern = "\\([[:alnum:]]{1,4}\\)")
+  cosponsors <- gsub(pattern = "[\\(|\\)]", replacement = "", cosponsors)
+  cosponsors <- as.numeric(gsub("None",0,cosponsors))
+  # add to data frame
+  rows <- (i+1):(i+length(k))
+  SenateBills[rows,] <- data.frame(bill, title, sponsor, cosponsors, stringsAsFactors = FALSE)
+}
+
 
 # For another web scraping tutorial of mine, see:
 # https://github.com/UVa-R-Users-Group/meetup/tree/master/2014-10-07-web-scraping
+
+# The rvest package by Hadley Wickham allows you to "Easily Harvest (Scrape) Web
+# Pages":
+# http://blog.rstudio.org/2014/11/24/rvest-easy-web-scraping-with-r/
 
 # The XML package also has some functions for converting HTML tables to data
 # frames.
@@ -299,6 +464,7 @@ allStocks$Stock <- gsub(pattern = "\\.csv\\.[0-9]{1,3}",
 allStocks$Stock <- factor(allStocks$Stock)
 head(allStocks)
 tail(allStocks)
+summary(allStocks$Stock)
 
 # While we're at it, let's fix the Date. (Currently a factor.)
 allStocks$Date <- as.Date(allStocks$Date, format="%d-%b-%y")
@@ -310,32 +476,94 @@ ggplot(allStocks, aes(x=Date, y = Close, color=Stock)) + geom_line()
 
 # Now let's finish cleaning up the 2012 election data!
 names(electionData)
-# I want to drop everything to the right of the "NA..34 NA" column. Frankly I'm
+# I want to drop everything to the right of the "NA.34 NA" column. Frankly I'm
 # not sure what those columns contain.
 
-# Get the column number of the column with header "NA..34 NA"
-fir <- grep("NA..34 NA", names(electionData))
+# Get the column number of the column with header "NA.34 NA"
+fir <- grep("NA.34 NA", names(electionData))
 fir
 # get the column number of the last column in the data frame
 las <- ncol(electionData)
 las
-# Now subset the data frame; keep all columns except 71-82
+# Now subset the data frame; keep all columns except 72-82
 electionData <- electionData[,-c(fir:las)]
 
-# drop columns with names of "NA..1, NA..2, etc"
-ind <- grep("NA\\.\\.[0-9]{1,2}", names(electionData))
+# drop columns with names of "NA.1, NA.2, etc"; these are proportions. I can
+# always derive them later if I want them.
+ind <- grep("NA\\.[0-9]{1,2}", names(electionData))
 ind
 electionData <- electionData[,-ind]
 
 # and some final clean up
 names(electionData)[3] <- "Total.Popular.Vote" 
-names(electionData)[5] <- "Elec.Vote R" 
-electionData$"Pop.Vote D" <- NULL
+names(electionData)[5] <- "Elec Vote R" 
+electionData$"Pop Vote D" <- NULL
 rownames(electionData) <- NULL
+
+# still some lingering character columns
+which(sapply(electionData, is.character))
+# convert to numeric
+electionData[,2:6] <- sapply(electionData[,2:6], as.numeric)
 
 # Now our election data contains only number of votes. 
 
 
+# Another extended example ------------------------------------------------
+
+# Let's add Occupation names to the arrests data. Recall that the Occup columns 
+# contains numeric codes for Occupations. I'd like to make that column a factor
+# where the codes are associated with levels that define the code number.
+arrests$Occup[1:5]
+
+
+# First we read in a document that contains Occupation code numbers and the
+# occupation name. I created this from the codebook that accompanied this data.
+oc <- readLines("../data/00049-Occupation-codes.txt", warn=FALSE)
+
+# trim whitespace
+oc <- trimws(oc)
+
+# Notice all code numbers are in the first three positions. Let's use stringr 
+# for the str_extract() function. Notice we need to convert to integer to match
+# the integer codes in the arrests data frame.
+codeNums <- as.integer(str_extract(string = oc, pattern = "^[0-9]{3}"))
+
+# Getting the code names is a little harder. There are probably a dozen 
+# different ways to proceed from this point on, but here's how I decided to do
+# it. Basically extract everything except numbers.
+codeNames <- trimws(str_extract(string = oc, pattern = "[^[:digit:]]+"))
+head(codeNames)
+tail(codeNames)
+
+# Now I can make Occup a factor with levels equal to codeNums and labels equal 
+# to codeNames. I'm going to make a new column so we can compare to the original
+# column.
+arrests$Occup2 <- factor(arrests$Occup, levels = codeNums, labels = codeNames)
+
+# some quick counts; they seem to match our source file
+head(summary(arrests$Occup2))
+tail(summary(arrests$Occup2))
+
+# Apparently there are no codes in the data for Cannot Read Film (997) or None
+# listed (998) despite them being listed in the code book.
+nrow(subset(arrests, Occup %in% c(997,998)))
+
+# Which codes are we using that don't have matches in the data?
+setdiff(codeNums,arrests$Occup)
+
+# 174 = secret society; codebook reports 0 so that makes sense.
+
+# Which codes are in the data that we don't have matches for in codeNums?
+setdiff(arrests$Occup, codeNums)
+
+# 1, 2, and 178 are not listed in the codebook!
+
+k <- setdiff(arrests$Occup, codeNums)
+head(subset(arrests, Occup %in% k, select = c("Occup","Occup2")))
+nrow(subset(arrests, Occup %in% k))
+# 403 records with Occup code that doesn't match codebook
+
+# Bottom line: this data, as provided by ICPSR, is a bit dirty.
 
 # qdapRegex package -------------------------------------------------------
 
@@ -351,8 +579,8 @@ rushSA
 # I'd like to make a data frame with two columns: album title and year released.
 # We'll use qdapRegex functions to do this.
 
-# First let's trim the white space using the rm_white_lead_trail() function.
-rushSA <- rm_white_lead_trail(rushSA)
+# First let's trim the white space:
+rushSA <- trimws(rushSA)
 
 # The qdapRegex package has a function called rm_between() that will 
 # Remove/Replace/Extract Strings Between 2 Markers. I want to use it to extract 
@@ -365,8 +593,9 @@ year
 
 # I need to remove the string ", cover album". Could use gsub() to find and
 # replace with nothing, but a more general approach would be to extract all
-# numbers.
-year <- unlist(rm_number(year, extract = TRUE, pattern = "[0-9]+"))
+# numbers. Remember the tidyr helper function, extract_numeric?
+
+year <- tidyr::extract_numeric(year)
 year
 
 # Now get the album titles; this time use the rm_between() function without the 
@@ -379,10 +608,10 @@ album
 rushStudioAlbums <- data.frame(year, album)
 head(rushStudioAlbums)
 
-# There is also a package called stringi that I know very little about, except 
-# that it bills itself as "THE string processing package for R". Might be worth a
-# look: http://www.rexamine.com/resources/stringi/
+# There is also a package called stringi that bills itself as "THE string 
+# processing package for R". As I understand it, stringr is wrapper for stringi.
+# Learn more :http://www.rexamine.com/resources/stringi/
 
 # save data for next set of lecture notes
-save(list=c("electionData", "weather", "arrests", "allStocks", "popVa",
-            "senate_bills"), file="../data/datasets_L07.Rda")
+save(list=c("electionData", "weather", "arrests", "allStocks", "popVa","airplane",
+            "SenateBills"), file="../data/datasets_L07.Rda")

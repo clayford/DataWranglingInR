@@ -1,7 +1,7 @@
 ---
 title: "R and RStudio Essentials"
 author: "Clay Ford"
-date: "Spring 2015"
+date: "Spring 2016"
 output: beamer_presentation
 ---
 
@@ -15,7 +15,7 @@ output: beamer_presentation
 
 ## How to get R and RStudio
 
-**R**: http://cran.r-project.org/ (or better yet, Google “Download R”)
+**R**: http://cran.r-project.org/ (or better yet, Google "Download R")
 
 **RStudio**: http://www.rstudio.com/ 
 
@@ -73,7 +73,7 @@ _create data frame_:
 
 ## R basics - packages
 
-All functions belong to *packages*. R comes with about 25 packages, but as of January 2015, there are *over 6200* user-contributed packages!
+All functions belong to *packages*. R comes with about 25 packages, but as of January 2016, there are *over 7700* user-contributed packages!
 
 To use functions in a package, the package must be installed and loaded. 
 
@@ -110,7 +110,7 @@ You can use R interactively, entering one line at a time in the console. But you
 
 An R script is just a text file with a .R extension.
 
-`Ctrl + Shift + N` will start a new script on a PC.
+`Ctrl + Shift + N` will start a new script on a PC.   
 `Command + Shift + N` will start a new script on a Mac.
 
 Be sure you know how to start and save an R script. I will ask you to turn in R scripts for assignments.
@@ -171,7 +171,7 @@ When setting your working directory:
 
 - Type `setwd()` (notice RStudio automatically adds the closing parens)
 - Type `""` in the parens (notice RStudio automatically adds the closing double-quote)
-- Type `~/` in the double quotes and hit Tab; you should see a selection of available directories in your computer's home directory.
+- Type `~/` in the double quotes and hit Tab; you should see a selection of available directories in your computer's home directory. (typing `/` and hitting Tab will list contents of the root directory.)
 - arrow up and down to find the desired directory and hit Tab.
 
 ## Setting your working directory - RStudio
@@ -226,7 +226,7 @@ Run the current section: `Ctrl + Alt + T`
 
 Clear the console: `Ctrl + L`
 
-Quickly create an R Notebook of your code: `Ctrl + Shift + K`
+Quickly create an R Notebook (PDF file) of your R script and its output: `Ctrl + Shift + K`
 
 More RStudio Keyboard Shortcuts:  
 `Alt + Shift + K`

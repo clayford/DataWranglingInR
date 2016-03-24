@@ -1,7 +1,7 @@
 #' ---
 #' title: "Data Wrangling in R: Formatting Strings and Dates"
 #' author: "Clay Ford"
-#' date: "Spring 2015"
+#' date: "Spring 2016"
 #' output: pdf_document
 #' ---
 
@@ -40,22 +40,31 @@ str(popVa)
 
 # nchar() - calculate the number of characters in a string. 
 
-nchar("data")
+nchar("It's showtime!")
+# Notice that spaces and punctuation are counted
+
 popVa$GEO.id[1]
 nchar(popVa$GEO.id[1])
 popVa$GEO.display.label[1]
 nchar(popVa$GEO.display.label[1])
-# Notice that spaces are counted
 
 # nchar is vectorized so it will work on entire vectors:
 nchar(popVa$GEO.display.label)
 
 # NOTE: nchar() does not work on factors.
+# (tmp <- factor(c("apple","apple","berry","berry")))
+# nchar(tmp)
+# Error in nchar(tmp) : 'nchar()' requires a character vector
+
+# need to convert to character
+# nchar(as.character(tmp))
+# rm(tmp)
 
 # How does nchar() handle NAs? It returns 2:
 (x <- c("UVa","UVa",NA, "GT", "GT"))
 is.na(x)
 nchar(x)
+
 # Here's one way to skip NAs and only report the number of characters of
 # non-missing strings:
 nchar(x[!is.na(x)])
@@ -65,42 +74,185 @@ rm(x)
 # to lower-case, or vice versa. Non-alphabetic characters are left unchanged. 
 
 tolower("HEY GUYS")
+toupper("omg!")
+
+# and again these work on vectors
+state.abb[1:5]
+tolower(state.abb[1:5])
+
+state.name[1:5]
+toupper(state.name[1:5])
 
 # I find tolower() useful when you've read in data with ALLCAP column names and
 # you want to convert to lowercase.
 
-df <- data.frame(ID=1:3, NAME=c("Bill","Ted","John"),AGE=c(23,21,20))
-df
-names(df) <- tolower(names(df))
-df
-rm(df)
+dat <- data.frame(ID=1:3, NAME=c("Bill","Ted","John"),AGE=c(23,21,20))
+dat
+names(dat) <- tolower(names(dat))
+dat
+rm(dat)
 
-# paste() - Concatenate vectors after converting to character
+# trimws() - Remove leading and/or trailing whitespace from character strings.
+
+x <- c(" VA    ", "MD ", "   DE ")
+x
+trimws(x) # default argument: which = "both
+trimws(x, which = "right")
+trimws(x, which = "left")
+
+# Our arrests data has a column called CommuneName. It's currently stored as a Factor.
+str(arrests$CommuneName)
+arrests$CommuneName[1:4]
+
+# Let's convert to character. Really no reason to keep as a factor.
+arrests$CommuneName <- as.character(arrests$CommuneName)
+
+# But look at all the extra spaces...
+arrests$CommuneName[1:4]
+
+# Let's trim it
+arrests$CommuneName <- trimws(arrests$CommuneName)
+arrests$CommuneName[1:4]
+
+
+# abbreviate() - Abbreviate strings to at least minlength characters, such that
+# they remain unique. By default, minlength = 4
+
+abbreviate(names(popVa))
+
+# A common use of abbreviate is cleaning up long variable names in a data frame.
+orig <- names(popVa) # save
+names(popVa) <- abbreviate(names(popVa))
+str(popVa)
+# discard abbreviated names and change back to original names
+names(popVa) <- orig
+
+# Warning from the documentation: This is really only suitable for English, and
+# does not work correctly with non-ASCII characters.
+
+# paste() and paste0() - Concatenate vectors after converting to character
 
 # paste converts its arguments to character strings, and concatenates them
 # (separating them by the string given by the sep argument)
 
 x <- "Irwin"
 y <- "Fletcher"
-paste(x,y)
+paste(x, y)
 # use the sep argument to specify what, if anything, should be pasted between
 # the items. For example, to create "Fletcher, Irwin"
-paste(y,x,sep=", ")
+paste(y, x, sep=", ")
 
-# What about a vector of character strings? Below is a vector of three strings:
-(z <- c("Irwin","M.","Fletcher"))
-# How can I paste the elements together to form one string? Use the collapse
-# argument (the sep argument has no effect when applied to a single vector):
-paste(z, collapse = " ")
+# There's also paste0() which is basically paste() with sep=""
+paste0(x, y)
+paste0(21, 12) # also works for numbers, but converts to character
 
-# paste() is also vectorized and will work on vectors. Recall the airquality
-# dataset that comes with R:
+# paste() is vectorized and will work on vectors. Recall the airquality dataset
+# that comes with R:
 head(airquality)
 
 # Let's say we want to paste the Month and Day together along with 1973 to form
 # a new variable called Date. Here's how we do it:
 airquality$Date <- paste(airquality$Month, airquality$Day, "1973", sep="/")
 head(airquality)
+
+# What about pasting elements in a vector into one character string? Below is a
+# vector of three strings:
+(z <- c("Irwin","M.","Fletcher"))
+# How can I paste the elements together to form one string? Use the collapse
+# argument:
+paste(z, collapse = " ")
+
+
+# strsplit() - Split the Elements of a Character Vector
+
+# strsplit() splits the elements of a character vector x into substrings 
+# according to a specified split. The basic syntax is strsplit(x, split) where x
+# is a character vector and split is a character vector to use for splitting.
+
+# This is sort of like the opposite of paste() with the collapse="" argument.
+Fletch <- paste(z, collapse = " ")
+Fletch
+strsplit(Fletch, split = " ")
+
+# Notice strsplit returns a list object and discards the split character. We can
+# use unlist() to quickly get a vector:
+
+unlist(strsplit(Fletch, split = " "))
+
+# another example:
+
+strsplit("212-555-1212", split="-")
+
+# what about splitting on a period? Be careful!
+
+strsplit(c("fig1.jpg","fig2.jpg","fig3.jpg"), split = ".")
+
+# The split argument takes a regular expression and a "." has a special meaning 
+# in regular expressions. We either need to "escape" the period so it is treated
+# like a literal string or use the fixed argument. To "escape" something in R,
+# use two backslashes:
+
+strsplit(c("fig1.jpg","fig2.jpg","fig3.jpg"), split = "\\.")
+strsplit(c("fig1.jpg","fig2.jpg","fig3.jpg"), split = ".", fixed = TRUE)
+
+# More on regular expressions in the next class!
+
+# What happens if we split on nothing? Everything is split.
+strsplit("abcde", split="")
+
+# Extended example: Distribution of English letters in the screenplay of Airplane!
+
+# Read in screenplay and make all text lower case:
+url <- "http://www.awesomefilm.com/script/airplane.txt"
+airplane <- tolower(scan(url, what = "character")) # scan reads in one word at a time
+airplane[1:10]
+
+# Now split the words into letters
+airplaneLetters <- strsplit(airplane, split = "") # Large list! One element for each word
+airplaneLetters[1:3]
+
+# Let's unlist into one big character vector:
+airplaneLetters <- unlist(airplaneLetters)
+length(airplaneLetters)
+
+# Get the count of letters with the table() function
+table(airplaneLetters)
+
+# Let's keep only english letters
+keep <- airplaneLetters %in% letters
+airplaneLetters <- airplaneLetters[keep]
+
+# Just counts of English letters
+table(airplaneLetters)
+
+# Sort and save
+(lettDist <- sort(table(airplaneLetters), decreasing = TRUE))
+
+# Now present in a data frame
+data.frame(letters=names(lettDist), 
+           percent=paste0(round(lettDist/length(airplaneLetters),4)*100,"%"))
+
+
+# Let's split the contents of the GEO.display.label column by the comma and
+# store in temp.
+head(popVa$GEO.display.label)
+temp <- strsplit(popVa$GEO.display.label,",")
+temp[1:3]
+# Notice we split each string by comma into two strings and the splitting
+# character, the comma, is discarded.
+
+# Now we can use this object to extract just the city/town names. Again this is
+# a list. Let's investigate the structure of the object:
+temp[[1]] # the first list element
+temp[[1]][1] # the first element of the vector in the first list element
+
+# we can use sapply and an anonymous function to go through the list and pull
+# out the first vector element from each list element, like so.
+popVa$city <- sapply(temp, function(x)x[1]) # apply to each list element
+head(popVa)
+# sometimes you'll see people do something like this, because `[` is itself a
+# function:
+# sapply(temp, function(x)`[`(x,1))
 
 
 # substr() - Extract or replace substrings in a character vector. 
@@ -127,40 +279,8 @@ as.integer(substr(popVa$GEO.id2, 3, 7))
 x <- "Megatron"
 substr(x,5,8) <- "zord"
 x
-# This works but probably easier to use sub() and gsub() which we'll get to
-# shortly.
+# This works but probably easier to use sub() and gsub(). Speaking of which...
 
-
-# strsplit() - Split the Elements of a Character Vector
-
-# strsplit() splits the elements of a character vector x into substrings 
-# according to a specified split. The basic syntax is strsplit(x, split) where x
-# is a character vector and split is a character vector to use for splitting.
-
-strsplit("212-555-1212", split="-")
-
-# Notice strsplit returns a list object and discards the split character.
-
-# Let's split the contents of the GEO.display.label column by the comma and
-# store in temp.
-head(popVa$GEO.display.label)
-temp <- strsplit(popVa$GEO.display.label,",")
-temp[1:3]
-# Notice we split each string by comma into two strings and the splitting
-# character, the comma, is discarded.
-
-# Now we can use this object to extract just the city/town names. Again this is
-# a list. Let's investigate the structure of the object:
-temp[[1]] # the first list element
-temp[[1]][1] # the first element of the vector in the first list element
-
-# we can use sapply and an anonymous function to go through the list and pull
-# out the first vector element from each list element, like so.
-popVa$city <- sapply(temp, function(x)x[1]) # apply to each list element
-head(popVa)
-# sometimes you'll see people do something like this, because `[` is itself a
-# function:
-# sapply(temp, function(x)`[`(x,1))
 
 
 # sub() - find and replaces first instance
@@ -187,17 +307,17 @@ popVa$city <- gsub(" town","",popVa$city)
 popVa$city[1:5]
 
 # I should point out the creation of the city column could have been carried out
-# with one line using a "regular expression". Regular expressions are a method 
-# of expressing patterns in character values. For example I could have submitted
+# with one line using a "regular expression". For example I could have submitted
 # the following single line of code to extract the city/town names:
 
 temp <- gsub(" city, Virginia$| town, Virginia$", "", popVa$GEO.display.label)
 temp[1:5]
+rm(temp)
 
 # The dollar sign means "find at the end of the string". The pipe means "or". So
 # the expression is find " city, Virginia" or " town, Virginia" at the end of 
-# the string. We will delve into regular expressions in the next lecture. This 
-# is a very simple example. Regular Expressions can get quite complicated and
+# the string. Agan, we'll get into regular expressions in the next class. This 
+# is a very simple example. Regular Expressions can get quite complicated and 
 # indeed there are entire books devoted to regular expressions.
 
 
@@ -214,11 +334,11 @@ grep("Fog-Rain",weather$Events)
 grep("Fog-Rain",weather$Events, value=T) 
 
 # grepl() returns a logical vector. TRUE if a match is found, FALSE otherwise.
-grepl("Fog-Rain",weather$Events)
+grepl("Fog-Rain",weather$Events)[1:20]
 
 # Let's create city/town indicator in popVa data frame:
 popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label),1,0)
-
+popVa[1:10,c("city","city.ind")]
 
 # grep() and grepl() also have an ignore.case argument. When set to TRUE, case
 # is ignored so searching for "city" finds "City", "CITY", and "city". 
@@ -226,33 +346,99 @@ popVa$city.ind <- ifelse(grepl("city,", popVa$GEO.display.label),1,0)
 # grep, grepl, sub and gsub become extremely powerful with regular expressions,
 # which we'll explore in the next lecture.
 
-# The stringr package
 
-# From the package description: "stringr is a set of simple wrappers that make 
-# R's string functions more consistent, simpler and easier to use." That about 
-# says it all. This is an invaluable package for working with string data.
+# The stringr package -----------------------------------------------------
+
+# From the stringr vignette (2015-04-29):
+
+# "Strings are not glamorous, high-profile components of R, but they do play a
+# big role in many data cleaning and preparations tasks. R provides a solid set
+# of string operations, but because they have grown organically over time, they
+# can be inconsistent and a little hard to learn. Additionally, they lag behind
+# the string operations in other programming languages, so that some things that
+# are easy to do in languages like Ruby or Python are rather hard to do in R.
+# The stringr package aims to remedy these problems by providing a clean, modern
+# interface to common string operations."
+
+# I encourage you to read and work through the stringr vignette.
+
+# Let's look at a few stringr functions. Note the similarity in function names.
+# They all begin with "str_"
 
 # install.packages("stringr")
 library(stringr)
 
-# We will look deeper into stringr when we cover regular expressions, for now
-# here are two handy functions to tide you over:
 
-# str_trim() - Trim whitespace from start and end of string.
-x <- c(" VA ", " MD ", " DE ")
-x
-str_trim(x)
-
-# str_sub() - Extract substrings from a character vector.
-
-# This differs from substr() by allowing you use negative numbers to count
-# backward and to specify only the end position
+# str_sub() - equivalent to substr() but allows you to use negative numbers to
+# count backward and to specify only the end position.
 
 loc <- "Charlottesville, VA, 22901"
 str_sub(loc, end = 15) # extract everything through position 15
 str_sub(loc, start = -5) # extract the last 5 characters
 str_sub(loc, end = -8) # extract the 8th from last character and everything before it
 
+# Also, with str_sub() replacement strings not do need to be the same length as
+# the string they are replacing unlike substr().
+
+x <- "Megatron"
+substr(x,5,8) <- "zooooord"
+x # only 4 characters replaced
+
+x <- "Megatron"
+str_sub(x, 5, 8) <-  "zooooord"
+x # all characters replaced
+
+# str_length() - equivalent to nchar(), but it preserves NA's (rather than
+# giving them length 2)
+
+(x <- c("UVa","UVa",NA, "GT", "GT"))
+is.na(x)
+str_length(x)
+
+# str_detect() - similar to grepl
+
+str_detect(weather$Events, "Fog-Rain")[1:20]
+
+
+# str_replace() - similar to sub() and gsub().
+
+text <- "I said no no no"
+str_replace(text, "no", "yes") # first instance
+str_replace_all(text, "no", "yes") # all instances
+
+
+# str_split() and str_split_fixed() - similar to strsplit
+
+head(popVa$GEO.display.label)
+temp <- str_split(popVa$GEO.display.label,",")
+temp[1:3]
+
+# str_split_fixed() allows you to limit the splits to a certain number. It 
+# returns a character matrix instead of a list. Below we only split on the first
+# hyphen in weather$Events.
+head(weather$Events)
+temp <- str_split_fixed(weather$Events,"-", 2)
+temp[15:20,]
+
+# str_count() - Count the number of matches in a string
+
+str_count("Mississipi","s")
+
+# How many times does "striker" appear in the screenplay for airplane? First we
+# make the airplane object one long character vector.
+airplaneV <- paste(airplane, collapse = " ")
+length(airplaneV)
+# Now do the count
+str_count(airplaneV, "striker")
+
+# surely vs. shirley
+str_count(airplaneV, "surely")
+str_count(airplaneV, "shirley")
+
+# As you can see the stringr functions have a consistent naming scheme (str_*). 
+# When combined with regular expressions they provide a powerful arsenal of 
+# character manipulation tools. There are several other stringr functions. Be
+# sure to read the documentation to learn more and see some good examples.
 
 
 # Formatting Dates --------------------------------------------------------
@@ -294,6 +480,8 @@ class(y)
 weather$Date <- as.Date(weather$EST, format="%m/%d/%Y")
 weather$Date[1:5]
 class(weather$Date)
+unclass(weather$Date[1:5]) #  number of days since 1970-01-01
+typeof(weather$Date)
 
 # That may seem like a minor conversion, but with a date column formatted as 
 # Date we can now easily identify weekdays, months, and quarters. The
@@ -379,7 +567,7 @@ class(y)
 # Use unclass to see the internal "list" structure of a POXIXlt object:
 unclass(y)
 # notice we can extract specific elements using the names:
-y$mon # 0 = January
+y$mon 
 y$mday
 y$sec
 # see ?DateTimeClasses for a list of elements in POSIXlt. Unless you really need
@@ -422,12 +610,20 @@ seq(as.Date("2015-01-01"), by="days", length=14)
 seq(as.Date("2015-01-01"), to=as.Date("2015-12-31"), by="2 weeks")
 
 
-# The lubridate package
+# There is a whole field of statistics involved with time series analysis which 
+# demands yet more wrangling of dates and times. One such package that provides 
+# help is the zoo package. It's very mature and is well documented. If you're 
+# interested in analyzing financial data with R, this is probably one package
+# you'll end up using. Another package of note is xts.
+
+
+# The lubridate package ---------------------------------------------------
 
 # From the package description: "Lubridate has a consistent, memorable syntax, 
 # that makes working with dates fun instead of frustrating." Fun? I'll let you 
 # be the judge of that. But I will say this package does make working with dates
 # much easier.
+
 
 # install.packages("lubridate")
 library(lubridate)
@@ -444,12 +640,27 @@ mdy(weather$EST[1:3])
 # the order in which the year ('y'), month ('m') and day ('d') elements appear:
 # dmy, myd, ymd, ydm, dym, mdy, ymd_hms
 
-# If that was all lubridate did it would still be a fantastic package. But it
-# does much more! lubridate has a very friendly vignette you should read. You
-# can also read the original journal article: "Dates and Times Made Easy with
-# lubridate" by Garrett Grolemund, Hadley Wickham.
-# http://www.jstatsoft.org/v40/i03/
+# A few more lubridate functions:
+
+# today() - The current date
+# now() - The current time
+# here() - The current time in your local timezone
+today()
+now()
+here()
+
+# am(), pm() - Does date time occur in the am or pm?
+am(now())
+pm(now())
+
+
+# leap_year() - is this a leap year?
+leap_year(2016)
+
+# lubridate has a very friendly vignette. You can also read the
+# original journal article: "Dates and Times Made Easy with lubridate" by
+# Garrett Grolemund, Hadley Wickham. http://www.jstatsoft.org/v40/i03/
 
 # save data for next set of lecture notes
-save(list=c("electionData", "weather", "arrests", "allStocks", "popVa"), 
+save(list=c("electionData", "weather", "arrests", "allStocks", "popVa", "airplane"), 
      file="../data/datasets_L06.Rda")

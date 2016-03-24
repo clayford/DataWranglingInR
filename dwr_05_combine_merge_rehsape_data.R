@@ -1,7 +1,7 @@
 #' ---
 #' title: "Data Wrangling in R: Combining, Merging and Reshaping Data"
 #' author: "Clay Ford"
-#' date: "Spring 2015"
+#' date: "Spring 2016"
 #' output: pdf_document
 #' ---
 
@@ -12,7 +12,7 @@ load("../data/datasets_L04.Rda")
 
 # Sometimes we have multiple data frames we want to combine. There are typically
 # three ways to do this: (1) stack on top of each other, (2) place side-by-side,
-# or (3) merge together based on a common variable.
+# or (3) merge together based on common variables.
 
 
 # Stacking ----------------------------------------------------------------
@@ -67,10 +67,30 @@ names(allStocks)[1] <- "Date"
 head(allStocks)
 
 # We see that R very kindly created row names for us that identifies the source 
-# data frame for each row! We can exploit that information to create a variable 
-# that indicates which record belongs to which company. In other words, we can 
-# add a column called "company" that will list "BBBY", "FLWS", etc. for their
-# respective rows. We will do this in a later lecture.
+# data frame for each row! That's because rbind() has a logical argument called 
+# "make.row.names" that defaults to TRUE. We can exploit that information to
+# create a variable that indicates which record belongs to which company. In
+# other words, we can add a column called "company" that will list "BBBY",
+# "FLWS", etc. for their respective rows. We will do this in a later lecture.
+
+# But what if you didn't want that behavior? We could set make.row.names = 
+# FALSE. The trick to doing that with do.call is that you need c() to add
+# further arguments. So you have to do something like this:
+# 
+# allStocks <- do.call(rbind, c(allStocks, make.row.names = FALSE))
+
+# Recall that c() combines values into vectors OR lists.
+
+is.vector(
+  c(1,2,3)
+  )
+
+is.list(
+  c(1, 2, list(g=c("m","f"), x=2:4))
+  )
+
+apply(iris[,-5], 2, function(x) c(mean(x), sd(x), length(x)))
+
 
 # Side-by-side ------------------------------------------------------------
 
@@ -81,6 +101,32 @@ class(cbind(first,third))
 # WARNING: cbind does not require matching heights; if one data frame is shorter
 # it will recycle it. Notice below the third data frame is recycled.
 cbind(rbind(first,second),third)
+
+# However, if the number of rows of the shorter data frame does not evenly 
+# divide into the number of rows of the taller data frame, then R throws an 
+# error.
+
+# cbind(rbind(first,second),third[-1,])
+# Error in data.frame(..., check.names = FALSE) : 
+#   arguments imply differing number of rows: 10, 4
+
+
+# A note about cbind and rbind --------------------------------------------
+
+# Using cbind and rbind on vectors does NOT produce data frames.
+x <- 1:3; y <- letters[1:3]
+
+class(cbind(x,y))
+is.data.frame(cbind(x,y))
+is.data.frame(rbind(x,y))
+
+dat <- data.frame(x,y)
+
+# However if one of the objects you're binding is a data frame, then you do end
+# up with a data frame.
+dat <- data.frame(x,y)
+z <- c("a","a","c")
+is.data.frame(cbind(dat,z))
 
 
 # Merging -----------------------------------------------------------------
@@ -108,7 +154,7 @@ left <- data.frame(id=c(2:7),
                      y2=rnorm(6,100,5))
 left
 right <- data.frame(id=rep(1:4,each=2),
-                    z2=sample(c("Y","N"),8, replace=TRUE))
+                    z2=sample(letters,8, replace=TRUE))
 right
 
 # Data frames left and right have columns "id" in common. Let's merge them 
@@ -137,7 +183,7 @@ merge(left, right, all.y=TRUE)
 # When merging two data frames that do not have matching column names, we can
 # use the by.x and by.y arguments to specify columns to merge on.
 
-# Let's say we want to merge the first and left data frames by x0 and y1. The
+# Let's say we want to merge the first and left data frames by x0 and id. The
 # by.x and by.y arguments specify which columns to use for merging.
 first
 left
@@ -160,7 +206,7 @@ merge(second, left)
 c(nrow(second)*nrow(left), ncol(second) + ncol(left))
 
 
-# match(), intersect(), and %in% 
+# match(), %in%, intersect(), union(), setdiff(), setequal() --------------
 
 # Sometimes we don't actually want to merge data but rather just find out which 
 # records they have in common. We can use the match() and intersect() functions
@@ -176,23 +222,37 @@ few
 
 # First let's use match(). The basic syntax of match() is match(x, table) where 
 # x is the values to be matched and table is the values to be matched against. 
-# So basically we're asking the question: "do any values in 'few' match values in
-# 'alot', and if so, which indices do they match?"
+# This asks the question: "do any values in 'few' match values in 'alot', and if
+# so, which indices do they match?"
 match(few, alot)
-# this says the 1st, 6th and 8th values of the "few" vector matches the 45th,
-# 69th and 77th values of the "alot" vector.
+
+# this says the 1st, 6th and 8th values of the "few" vector matches the 45th, 
+# 69th and 77th values of the "alot" vector. 
 
 # The %in% operator is perhaps more intutive. It returns a logical vector.
 few %in% alot
 # This says the 1st, 6th and 8th values of the "few" vector match values of the 
-# "alot" vector. Notice it doesn't locate the match. 
+# "alot" vector. Notice it doesn't return the actual number. But we could do
+# this:
+few[few %in% alot]
 
 # Using %in% means we can easily count the number of matches:
 sum(few %in% alot)
 
-# intersect actually returns the matching values between two vectors:
+# intersect() returns values in the first AND second vector:
 intersect(few,alot)
 
+# union() returns values in the first OR second vector:
+union(few, alot)
+
+# setdiff() returns the list of items in the first vector not in the 2nd vector:
+setdiff(few, alot)
+
+# setequal() asks if both vectors are equal and returns TRUE or FALSE:
+setequal(few, alot)
+
+# Note from documentation: "Each of union, intersect, setdiff and setequal will
+# discard any duplicated values in the arguments"
 
 # Reshaping Data ----------------------------------------------------------
 
@@ -220,7 +280,7 @@ long
 # calculations on, or create graphs of, the data. Therefore it's important to
 # know how to reshape data from wide to long. A very popular package for this
 # task is the reshape2 package. If you don't already have it, please install it:
-# install.packages("rehsape2)
+# install.packages("reshape2)
 library(reshape2)
 
 # The star function of the reshape2 package is melt(). It basically "melts" wide
@@ -232,6 +292,7 @@ library(reshape2)
 # those column headers. This is best explained with an example.
 
 # To make our "wide" data frame long
+wide
 melt(wide, id.vars = "name", measure.vars = c("test1","test2","test3"))
 
 # Notice the "test" column headers in wide are now in a column called 
@@ -258,22 +319,8 @@ aqLong <- melt(airquality, id.vars=c("Month", "Day"),
                variable.name = "Measurement", value.name="Reading")
 head(aqLong)
 
-# Now that the data is in long form, it's very easy to do something like this:
-op <- par(mfrow=c(2,3))
-for(i in 5:9){
-  plot(Reading ~ Day, data=aqLong, 
-       subset= Month==i & Measurement=="Temp", 
-       type="l", main=paste("Month =",i))
-}
-par(op)
-
-# or like this:
-library(ggplot2)
-ggplot(aqLong, aes(x=Day, y=Reading, 
-                   color=Measurement)) + 
-  geom_line() +
-  facet_wrap(~Month)
-
+# Data in long format makes summaries like this easy.
+with(aqLong, tapply(Reading, list(Month, Measurement), mean,na.rm=TRUE))
 
 # There is a reshape() function that comes with base R, but I find melt much 
 # easier to use. Here is how to use reshape() to do what we just did with
@@ -288,13 +335,14 @@ rm(aqLong2)
 # graph. 
 
 names(electionData)[1] <- "State"  
-edSub <- subset(electionData, select=c("State", "Obama Democratic", "Romney Republican", "Elec.Vote D"))
-edSub$Winner <- ifelse(is.na(edSub$"Elec.Vote D"),"Romney","Obama")
-edSub$"Elec.Vote D" <- NULL
+edSub <- subset(electionData, select=c("State", "Obama Democratic", "Romney Republican", "Elec Vote D"))
+edSub$Winner <- ifelse(is.na(edSub$"Elec Vote D"),"Romney","Obama")
+edSub$"Elec Vote D" <- NULL
 edSub <- melt(edSub, id.vars = c("State","Winner"), value.name="Votes",
               variable.name="Candidate")
 head(edSub)
 
+library(ggplot2)
 library(scales) # for the comma function
 ggplot(edSub, aes(x=State, y=Votes, group=Candidate, fill=Candidate)) + 
   geom_bar(position="dodge", stat="identity") + facet_wrap(~Winner) +
@@ -307,8 +355,9 @@ ggplot(edSub, aes(x=State, y=Votes, group=Candidate, fill=Candidate)) +
 
 
 # The dcast() function can reshape a long data frame to wide. First we'll 
-# demonstrate and then explain. Let's reshape our aqLong data frame back to its 
-# original wide format.
+# demonstrate and then explain. 
+
+# Let's reshape our aqLong data frame back to its original wide format.
 aqOrig <- dcast(aqLong, Month + Day ~ Measurement, value.var = "Reading")
 head(aqOrig)
 
@@ -329,7 +378,154 @@ dcast(aqLong, Month ~ Measurement, mean, na.rm=TRUE,
 dcast(aqLong, Month ~ Measurement, function(x)sum(is.na(x)), 
       value.var = "Reading")
 
-# See the examples for help(cast) for more examples.
+# See the examples for help(cast) for more complex examples.
+
+
+# tidyr -------------------------------------------------------------------
+
+# Tidy data is a concept put forth in Hadley Wickham's 2014 paper, Tidy Data 
+# (http://www.jstatsoft.org/v59/i10/). To quote the abstract: "Tidy datasets are
+# easy to manipulate, model and visualize, and have a specific structure: each
+# variable is a column, each observation is a row, and each type of
+# observational unit is a table."
+
+# Hadley created a package called tidyr to help tidy R data frames. Among other 
+# things it can be used to reshape data. The two main functions are gather() and
+# spread().
+
+# install.packages("tidyr")
+library(tidyr)
+
+# gather ------------------------------------------------------------------
+
+# gather is sort of like melt. It can make a wide data set long.
+
+# Documentation description: Gather columns into key-value pairs.
+
+# Syntax: gather(data, key, value, columns to gather) where data is your data 
+# frame, key is the name of the new key column, value is the name of the new 
+# value column, and the last part is names or numeric indices of columns to
+# collapse (or to exclude from collapsing).
+
+# Let's use gather() on the airquality data
+aqLong2 <- gather(airquality, key = Measurement, value = Reading, -Month, -Day)
+
+# Notice gather() handles character data differently than melt()!
+str(aqLong$Measurement)
+str(aqLong2$Measurement)
+
+# Let's compare the syntax from melt and gather:
+
+# melt(airquality, id.vars=c("Month", "Day"), 
+#      variable.name = "Measurement", value.name="Reading")
+# 
+# gather(airquality, key = Measurement, value = Reading, -Month, -Day)
+
+# The big difference is that in melt you identify the id.vars, the columns that 
+# will remain in the long data set after conversion from wide. In the gather 
+# function, you indicate which columns are being "gathered", either explicitly
+# or by not excluding them.
+
+# We see that the key and value arguments in gather correspond to the 
+# variable.name and value.name arguments in melt. We also don't need to quote
+# variable names in gather.
+
+
+# spread ------------------------------------------------------------------
+
+# spread is sort of like dcast. It can make a long data set wide.
+
+# Documentation description: Spread a key-value pair across multiple columns.
+
+# Basic syntax: spread(data, key, value) where data is a data frame, key is name
+# of the column with the (unique) values you want turned into column headers,
+# and value is the name of the column that has the values you want placed under
+# your new column headers.
+
+# Let's use spread() on the aqLong2 data
+head(aqLong2)
+
+# I want the unique values of Measurement to become column headers. I want the
+# corresponding values in the Reading column to go under the new column headers.
+
+aqOrig2 <- spread(aqLong2, key = Measurement, value = Reading)
+
+
+# Does this return the same wide data frame as dcast()? Not quite.
+names(aqOrig)
+names(aqOrig2)
+
+# The last two columns are swapped because dcast had to deal with Measure as a 
+# factor (and it's associated ordering of levels) whereas spread had to deal 
+# with Measure as a character vector and thus determined order of columsn
+# alphabetically.
+
+# Let's compare the syntax from dcast and spread:
+
+# dcast(aqLong, Month + Day ~ Measurement, value.var = "Reading")
+# 
+# spread(aqLong2, key = Measurement, value = Reading)
+
+# The big difference is that spread() doesn't require a formula. You just
+# indicate the column(s) you want to "spread" out.
+
+# We also see that the value argument in spread() corresponds to the value.var 
+# argument in dcast(). And spread() doesn't require quoting variable names.
+
+# Another major difference is that dcast() allows you to supply an aggregation 
+# function for generating summary statistics. spread() is just spreading out
+# key-value pairs across multiple columns.
+
+
+# tidyr helper functions --------------------------------------------------
+
+# tidyr includes a few helper functions. One that I really like is
+# extract_numeric().
+
+# This uses a regular expression to strip all non-numeric characters from a 
+# string and then coerces the result to a number. This strips all non-numeric
+# characters from a string and then coerces the result to a number.
+
+extract_numeric("$1,200.34")
+extract_numeric("-2%")
+
+# Let's generate some dollar amounts
+money <- dollar(round(runif(100,100,200),2)) # dollar() function from scales package
+money
+typeof(money)
+extract_numeric(money)
+typeof(extract_numeric(money))
+
+# The heuristic is not perfect - it won't fail for things that clearly aren't
+# numbers
+extract_numeric("12abc34")
+
+# Another helper function that may come in handy is separate().
+
+# Given either regular expression or a vector of character positions, separate()
+# turns a single character column into multiple columns. The default separation
+# value is a regular expression that matches any sequence of non-alphanumeric
+# values.
+
+df <- data.frame(x = c("a.b", "a.d", "b.c"))
+df
+# split column x into two new columns called A and B
+separate(df, x, c("A", "B"))
+
+# Example: separate() can be useful for splitting times into components.
+
+# Create a place holder data frame
+dat <- data.frame(i=1:10, time=character(10), stringsAsFactors = F)
+
+# loop through 10 iterations of logging the system time
+for(i in 1:10){
+  dat[i,2] <- format(Sys.time(), format = "%H:%M:%OS3") 
+  # %OS3 = fractional seconds to 3 places; see ?strptime
+  Sys.sleep(0.01) # delay 0.01 seconds
+}
+dat
+separate(dat, time, c("H","M","S","FS"))
+
 
 
 # save data for next set of lecture notes
