@@ -67,12 +67,6 @@ sum(sample(1:6, size=2, replace=TRUE))
 # same thing with %>% 
 sample(6, size=2, replace=TRUE) %>% sum()
 
-# simulate rolling two dice 100 times by updating the sample "space"
-sample(2:12, size=100, replace=TRUE)
-
-# proportion of "snake-eyes" in 1000 rolls
-mean(sample(2:12, size = 1000, replace = TRUE) == 2)
-
 # We can use the replicate() function to replicate samples. The replicate() 
 # function allows you to replicate an expression as many times as you specify. 
 # The basix syntax is replicate(n, expr) where n is the number of replications 
